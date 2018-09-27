@@ -17,8 +17,7 @@ type masseData struct {
 var dbState db.DbState
 
 func main() {
-	dbState.Url = os.Getenv("DBURL")
-	dbState.Name = os.Getenv("DBNAME")
+	dbState.InitDb() // TODO: move to handler or cookie
 	port := os.Getenv("PORT")
 
 	fs := http.FileServer(http.Dir("static"))
@@ -42,8 +41,11 @@ func LoginAuthHandler(w http.ResponseWriter, r *http.Request){
 }
 
 func IndexHandler(w http.ResponseWriter, r *http.Request){
+	fmt.Print(1)
 	session, _ := dbState.CreateSession()
+	fmt.Print(2)
 	c := dbState.GetCollection(session, "Category")
+	fmt.Print(3)
 	//m := masseData{}
 
 	count, _ := c.Count()

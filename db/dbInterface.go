@@ -3,19 +3,30 @@ package db
 import (
 	"github.com/globalsign/mgo"
 	"log"
+	"os"
 )
 
 type Db interface {
+	InitDb()
 	CreateSession(url string) (*mgo.Session, error)
 	GetCollection(session *mgo.Session) (mgo.Collection, error)
 	ValidateSession(session *mgo.Session) (*mgo.Session, error)
 }
 
 type DbState struct {
-	Url string
+	Url []string
 	DbName string
 	Username string
 	Password string
+}
+
+func (db *DbState) InitDb() {
+	db.Url = append(db.Url, os.Getenv("DBURL1"))
+	db.Url = append(db.Url, os.Getenv("DBURL2"))
+	db.Url = append(db.Url, os.Getenv("DBURL3"))
+	db.DbName = os.Getenv("DBNAME")
+	db.Username = os.Getenv("DBUSERNAME")
+	db.Password = os.Getenv("DBPASSWORD")
 }
 
 func (db *DbState) CreateSession() (*mgo.Session, error){
@@ -24,8 +35,9 @@ func (db *DbState) CreateSession() (*mgo.Session, error){
 			Addrs:    db.Url,
 			Username: db.Username,
 			Password: db.Password,
+			Timeout: 2000,
 	}
-	session, err := mgo.DialWithInfo()//.Dial(db.Url)
+	session, err := mgo.DialWithInfo(dialInfo)//.Dial(db.Url)
 	if err != nil {
 		log.Fatal(err)
 		return nil, err
