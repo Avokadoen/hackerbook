@@ -1,9 +1,14 @@
 package db
 
 import (
-	"github.com/globalsign/mgo"
+	"crypto/tls"
 	"log"
+	"net"
 	"os"
+	"time"
+
+	"github.com/globalsign/mgo"
+
 )
 
 type Db interface {
@@ -14,11 +19,13 @@ type Db interface {
 }
 
 type DbState struct {
-	Url []string
-	DbName string
+
+	Url      []string
+	DbName   string
 	Username string
 	Password string
 }
+
 
 func (db *DbState) InitDb() {
 	db.Url = append(db.Url, os.Getenv("DBURL1"))
@@ -30,14 +37,20 @@ func (db *DbState) InitDb() {
 }
 
 func (db *DbState) CreateSession() (*mgo.Session, error){
+
 	dialInfo :=
 		&mgo.DialInfo{
 			Addrs:    db.Url,
 			Username: db.Username,
 			Password: db.Password,
-			Timeout: 2000,
-	}
-	session, err := mgo.DialWithInfo(dialInfo)//.Dial(db.Url)
+
+			DialServer: func(addr *mgo.ServerAddr) (net.Conn, error) {
+				return tls.Dial("tcp", addr.String(), &tls.Config{})
+			},
+			Timeout: time.Second * 10,
+		}
+	session, err := mgo.DialWithInfo(dialInfo) //.Dial(db.Url)
+
 	if err != nil {
 		log.Fatal(err)
 		return nil, err
@@ -45,7 +58,7 @@ func (db *DbState) CreateSession() (*mgo.Session, error){
 	return session, nil
 }
 
-func (db *DbState) GetCollection(session *mgo.Session, collectionName string) (*mgo.Collection) {
+func (db *DbState) GetCollection(session *mgo.Session, collectionName string) *mgo.Collection {
 	return session.DB(db.DbName).C(collectionName)
 }
 
@@ -54,7 +67,7 @@ func (db *DbState) ValidateSession(session *mgo.Session) (*mgo.Session, error) {
 		return session, nil
 	}
 	session, err := db.CreateSession()
-	if err != nil{
+	if err != nil {
 		return nil, err
 	}
 	return session, nil

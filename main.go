@@ -1,21 +1,23 @@
 package main
 
 import (
-	"SoftwareSecurity2/db"
 	"fmt"
-	"gopkg.in/mgo.v2/bson"
 	"io/ioutil"
 	"net/http"
 	"os"
+
+	"gitlab.com/avokadoen/softsecoblig2/db"
+	"gopkg.in/mgo.v2/bson"
 )
 
 type masseData struct {
-	id bson.ObjectId `bson:"_id,omitempty"`
-	name string `json:"name"`
+	id   bson.ObjectId `bson:"_id,omitempty"`
+	name string        `json:"name"`
 }
 
 var dbState db.DbState
 
+//--username ServerAuth --password <PASSWORD>
 func main() {
 	dbState.InitDb() // TODO: move to handler or cookie
 	port := os.Getenv("PORT")
@@ -27,7 +29,7 @@ func main() {
 	http.ListenAndServe(":"+port, nil)
 }
 
-func LoginAuthHandler(w http.ResponseWriter, r *http.Request){
+func LoginAuthHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method == "POST" {
 		defer r.Body.Close()
 		r.Header.Set("Content-Type", "application/x-www-form-urlencoded")
@@ -42,6 +44,7 @@ func LoginAuthHandler(w http.ResponseWriter, r *http.Request){
 
 func IndexHandler(w http.ResponseWriter, r *http.Request){
 	fmt.Print(1)
+
 	session, _ := dbState.CreateSession()
 	fmt.Print(2)
 	c := dbState.GetCollection(session, "Category")
@@ -51,7 +54,3 @@ func IndexHandler(w http.ResponseWriter, r *http.Request){
 	count, _ := c.Count()
 	fmt.Printf("%+v\n", count)
 }
-
-
-
-
