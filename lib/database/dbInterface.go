@@ -2,8 +2,10 @@ package database
 
 import (
 	"fmt"
+	"github.com/globalsign/mgo/bson"
 	"log"
 	"os"
+	"strings"
 
 	"github.com/globalsign/mgo"
 	// mgo "gopkg.in/mgo.v2"
@@ -11,23 +13,35 @@ import (
 
 type Db interface {
 	InitState()
-	CreateSession(url string) (*mgo.Session, error)
-	GetCollection(session *mgo.Session) (mgo.Collection, error)
-	ValidateSession(session *mgo.Session) (*mgo.Session, error)
+	CreateSession() (error)
+	ValidateSession() (error)
+	InsertToCollection(collectionName string, data interface{}) (error)
+	ValidateUser(user User) (bool)
 }
 
 type DbState struct {
-	Hosts    []string
+	Hosts    string
 	DbName   string
 	Username string
 	Password string
 	Session  *mgo.Session
 }
 
+type Category struct {
+	Id    bson.ObjectId `bson:"_id,omitempty"`
+	Name  string        `json:"name"`
+	Posts int           `json:"posts"`
+}
+
+type User struct {
+	Id    bson.ObjectId `bson:"_id,omitempty"`
+	Email  string       `json:"email"`
+	Username  string    `json:"username"`
+	Password  string    `json:"password"`
+}
+
 func (db *DbState) InitState() {
-	db.Hosts = append(db.Hosts, os.Getenv("DBURL"))
-	// db.Hosts = append(db.Hosts, os.Getenv("DBURL2"))
-	// db.Hosts = append(db.Hosts, os.Getenv("DBURL3"))
+	db.Hosts = os.Getenv("DBURL")
 	db.DbName = os.Getenv("DBNAME")
 	db.Username = os.Getenv("DBUSERNAME")
 	db.Password = os.Getenv("DBPASSWORD")
@@ -39,59 +53,20 @@ func (db *DbState) InitState() {
 }
 
 func (db *DbState) CreateSession() (err error) {
-	url := fmt.Sprintf("mongodb://%s:%s@%s/%s", db.Username, db.Password, db.Hosts[0], db.DbName)
-	// url := "mongodb://master:kjlglRJLSKesjLKgLjrTLKdfLKJRSLfrRHSed1@ds215563.mlab.com:15563/softsecforumdb"
-	// url := "mongodb+srv://master:FQjHYATFwBhpOT8t@cluster0-jgrwo.mongodb.net/forum?ssl=true"
-	// dialInfo, err := mgo.ParseURL(url)
-	// dialInfo.Database = "forum"
-	// if err != nil {
-	// 	log.Fatalf("Parsing failed with error: %+v", err)
-	// }
-	// url := "mongodb+srv://master:3tm1BK2II9plEqL3@cluster0-jgrwo.mongodb.net/forum?ssl=true"
-	// fmt.Println(1.1)
-	// dialInfo := &mgo.DialInfo{
-	// 	Addrs:    db.Hosts,
-	// 	Username: "master",
-	// 	Password: "3tm1BK2II9plEqL3",
-	// 	Database: "forum",
-	//
-	// 	DialServer: func(addr *mgo.ServerAddr) (net.Conn, error) {
-	// 		return tls.Dial("tcp", addr.String(), &tls.Config{})
-	// 	},
-	// 	Timeout: time.Second * 10,
-	// }
-	// fmt.Printf("dialInfo:\n%+v", dialInfo)
+	url := fmt.Sprintf("mongodb://%s:%s@%s/%s", db.Username, db.Password, db.Hosts, db.DbName)
 
-	fmt.Println(1.2)
-	// fmt.Printf("\n\nDialInfo:\n\n%+v", dialInfo)
 	db.Session, err = mgo.Dial(url)
-
-	cols, err := db.Session.DB(db.DbName).CollectionNames()
-	fmt.Println()
-	for _, col := range cols {
-		fmt.Println(col)
-	}
-
-	// m := make(map[string]interface{})
-	// db.Session.DB(dbs[2]).C(cols[0]).Find(nil).One(&m)
-	// fmt.Println(m)
 
 	if db.Session == nil {
 		log.Fatal("Session was nil")
 	}
-	fmt.Println(1.25)
-	// fmt.Println(db.Session)
-	fmt.Println(1.3)
+
 	if err != nil {
 		// fmt.Print(dialInfo)
 		fmt.Errorf("died on error: %+v", err)
 	}
 	fmt.Println(1.4)
 	return err
-}
-
-func (db *DbState) GetCollection(collectionName string) *mgo.Collection {
-	return db.Session.DB(db.DbName).C(collectionName)
 }
 
 func (db *DbState) ValidateSession() error {
@@ -102,5 +77,24 @@ func (db *DbState) ValidateSession() error {
 	if err != nil {
 		return err
 	}
-	return fmt.Errorf("what the fuk, session: %+v", db.Session)
+	return nil
+}
+
+func (db *DbState) GetCollection(collectionName string) *mgo.Collection {
+	return db.Session.DB(db.DbName).C(strings.ToLower(collectionName))
+}
+
+func (db *DbState) InsertToCollection(collectionName string, data interface{}) (error) {
+	collection := db.GetCollection(collectionName)
+	return collection.Insert(data)
+}
+
+func (db *DbState) ValidateUser(user User) (bool) {
+	collection := db.GetCollection("users")
+	//var storedUser User
+	count, _ :=collection.Find(bson.M{"username": user.Username, "password": user.Password}).Count()//.One(&storedUser)
+	if count < 1 {
+		return false
+	}
+	return true
 }
