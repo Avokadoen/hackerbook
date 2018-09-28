@@ -1,0 +1,34 @@
+body {
+    background-color: black;
+}
+p, h1, h2, h3, h4, h5, div {
+    color: lawngreen;
+}
+div.center {
+    margin: auto;
+    width: 50%;
+    border: 1px solid lawngreen;
+    background-color: black;
+    padding-left: 10px;
+    padding-right: 0px;
+}
+h1.center{
+    text-align: center;
+}
+h1.noPad, h2.noPad, h3.noPad, h4.noPad, h5.noPad {
+    margin: 0px;
+    padding: 0px;
+}
+div.comment{
+    margin: auto;
+    border: 1px solid lawngreen;
+    background-color: black;
+    padding-left: 10px;
+    padding-right: 10px;
+
+}
+input {
+    background-color: black;
+    color: lawngreen;
+    border: 1px solid lawngreen;
+}
