@@ -53,9 +53,11 @@ func (db *DbState) InitState() {
 }
 
 func (db *DbState) CreateSession() (err error) {
+
 	url := fmt.Sprintf("mongodb://%s:%s@%s/%s", db.Username, db.Password, db.Hosts, db.DbName)
 
 	db.Session, err = mgo.Dial(url)
+
 
 	if db.Session == nil {
 		log.Fatal("Session was nil")

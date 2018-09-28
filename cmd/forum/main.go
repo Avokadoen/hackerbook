@@ -29,11 +29,15 @@ func main() {
 	Server.Database.InitState() // TODO: move to handler or cookie
 
 	router := mux.NewRouter().StrictSlash(false)
+	fs := http.FileServer(http.Dir("./web/"))
+	fmt.Printf("%+v\n", fs)
+	router.PathPrefix("/web/").Handler(http.StripPrefix("/web/", fs))
 
-	fs := http.FileServer(http.Dir("web"))
 	router.Handle("/", fs)
+
 	router.HandleFunc("/postlogin", LoginAuthHandler)
 	router.HandleFunc("/signup", SignUpHandler)
+
 	router.HandleFunc("/test", IndexHandler)
 
 	fmt.Printf("\nListening through port %v...\n", Server.Port)

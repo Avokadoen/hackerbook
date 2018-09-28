@@ -2,10 +2,25 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Title</title>
-    <a href=login.html>login</a>
+    <link rel="stylesheet" href="web/style.css">
+    <title>HackerBook</title>
 </head>
 <body>
-
+    <div>
+        <form action="/postlogin" method="post" enctype="application/x-www-form-urlencoded">
+            Username:
+            <input type="text" name="username" value="">
+            Password:
+            <input type="password" name="password" value="">
+            <input type="submit" value="login">
+        </form>
+    </div>
+    <h1 class="center">
+        HackerBook v2A.h
+    </h1>
+    <div class="center">
+        <h2 class="noPad">$POSTNAME</h2>
+        <h5 class="noPad">$USERNAME</h5>
+    </div>
 </body>
 </html>
