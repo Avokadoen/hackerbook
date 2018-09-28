@@ -25,9 +25,9 @@ type DbState struct {
 }
 
 func (db *DbState) InitState() {
-	db.Hosts = append(db.Hosts, os.Getenv("DBURL1"))
-	db.Hosts = append(db.Hosts, os.Getenv("DBURL2"))
-	db.Hosts = append(db.Hosts, os.Getenv("DBURL3"))
+	db.Hosts = append(db.Hosts, os.Getenv("DBURL"))
+	// db.Hosts = append(db.Hosts, os.Getenv("DBURL2"))
+	// db.Hosts = append(db.Hosts, os.Getenv("DBURL3"))
 	db.DbName = os.Getenv("DBNAME")
 	db.Username = os.Getenv("DBUSERNAME")
 	db.Password = os.Getenv("DBPASSWORD")
@@ -39,13 +39,14 @@ func (db *DbState) InitState() {
 }
 
 func (db *DbState) CreateSession() (err error) {
-	url := "mongodb://localhost"
+	url := fmt.Sprintf("mongodb://%s:%s@%s/%s", db.Username, db.Password, db.Hosts[0], db.DbName)
+	// url := "mongodb://master:kjlglRJLSKesjLKgLjrTLKdfLKJRSLfrRHSed1@ds215563.mlab.com:15563/softsecforumdb"
 	// url := "mongodb+srv://master:FQjHYATFwBhpOT8t@cluster0-jgrwo.mongodb.net/forum?ssl=true"
-	dialInfo, err := mgo.ParseURL(url)
-	dialInfo.Database = "forum"
-	if err != nil {
-		log.Fatalf("Parsing failed with error: %+v", err)
-	}
+	// dialInfo, err := mgo.ParseURL(url)
+	// dialInfo.Database = "forum"
+	// if err != nil {
+	// 	log.Fatalf("Parsing failed with error: %+v", err)
+	// }
 	// url := "mongodb+srv://master:3tm1BK2II9plEqL3@cluster0-jgrwo.mongodb.net/forum?ssl=true"
 	// fmt.Println(1.1)
 	// dialInfo := &mgo.DialInfo{
@@ -62,26 +63,18 @@ func (db *DbState) CreateSession() (err error) {
 	// fmt.Printf("dialInfo:\n%+v", dialInfo)
 
 	fmt.Println(1.2)
-	fmt.Printf("\n\nDialInfo:\n\n%+v", dialInfo)
-	db.Session, err = mgo.DialWithInfo(dialInfo)
+	// fmt.Printf("\n\nDialInfo:\n\n%+v", dialInfo)
+	db.Session, err = mgo.Dial(url)
 
-	//END OF DIGGING INTO DATA FOR VALIDATING
-
-	dbs, err := db.Session.DatabaseNames()
-	fmt.Println()
-	for _, db := range dbs {
-		fmt.Println(db)
-	}
-	cols, err := db.Session.DB(dbs[2]).CollectionNames()
+	cols, err := db.Session.DB(db.DbName).CollectionNames()
 	fmt.Println()
 	for _, col := range cols {
 		fmt.Println(col)
 	}
-	m := make(map[string]interface{})
-	db.Session.DB(dbs[2]).C(cols[0]).Find(nil).One(&m)
-	fmt.Println(m)
 
-	//END OF DIGGING INTO DATA FOR VALIDATING
+	// m := make(map[string]interface{})
+	// db.Session.DB(dbs[2]).C(cols[0]).Find(nil).One(&m)
+	// fmt.Println(m)
 
 	if db.Session == nil {
 		log.Fatal("Session was nil")
