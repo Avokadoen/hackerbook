@@ -39,43 +39,12 @@ func (db *DbState) InitState() {
 }
 
 func (db *DbState) CreateSession() (err error) {
-	url := fmt.Sprintf("mongodb://%s:%s@%s/%s", db.Username, db.Password, db.Hosts[0], db.DbName)
-	// url := "mongodb://master:kjlglRJLSKesjLKgLjrTLKdfLKJRSLfrRHSed1@ds215563.mlab.com:15563/softsecforumdb"
-	// url := "mongodb+srv://master:FQjHYATFwBhpOT8t@cluster0-jgrwo.mongodb.net/forum?ssl=true"
+	url := fmt.Sprintf("mongodb://%s:%s@%s/%s?ssl=true", db.Username, db.Password, db.Hosts[0], db.DbName)
 	// dialInfo, err := mgo.ParseURL(url)
-	// dialInfo.Database = "forum"
-	// if err != nil {
-	// 	log.Fatalf("Parsing failed with error: %+v", err)
-	// }
-	// url := "mongodb+srv://master:3tm1BK2II9plEqL3@cluster0-jgrwo.mongodb.net/forum?ssl=true"
-	// fmt.Println(1.1)
-	// dialInfo := &mgo.DialInfo{
-	// 	Addrs:    db.Hosts,
-	// 	Username: "master",
-	// 	Password: "3tm1BK2II9plEqL3",
-	// 	Database: "forum",
-	//
-	// 	DialServer: func(addr *mgo.ServerAddr) (net.Conn, error) {
-	// 		return tls.Dial("tcp", addr.String(), &tls.Config{})
-	// 	},
-	// 	Timeout: time.Second * 10,
-	// }
-	// fmt.Printf("dialInfo:\n%+v", dialInfo)
-
-	fmt.Println(1.2)
-	// fmt.Printf("\n\nDialInfo:\n\n%+v", dialInfo)
-	db.Session, err = mgo.Dial(url)
-
-	cols, err := db.Session.DB(db.DbName).CollectionNames()
-	fmt.Println()
-	for _, col := range cols {
-		fmt.Println(col)
+	if err != nil {
+		fmt.Println(err)
 	}
-
-	// m := make(map[string]interface{})
-	// db.Session.DB(dbs[2]).C(cols[0]).Find(nil).One(&m)
-	// fmt.Println(m)
-
+	db.Session, err = mgo.Dial(url)
 	if db.Session == nil {
 		log.Fatal("Session was nil")
 	}
