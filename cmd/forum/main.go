@@ -1,14 +1,20 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
-	"gitlab.com/avokadoen/softsecoblig2/lib/database"
+	"io/ioutil"
 	"net/http"
 	"os"
 
+	"log"
+	"strings"
+
+	validator "github.com/asaskevich/govalidator"
 	"github.com/gorilla/mux"
 	"github.com/subosito/gotenv"
 	"gitlab.com/avokadoen/softsecoblig2/cmd/forum/app"
+	"gitlab.com/avokadoen/softsecoblig2/lib/database"
 )
 
 // sources: https://www.thepolyglotdeveloper.com/2018/02/encrypt-decrypt-data-golang-application-crypto-packages/
@@ -17,14 +23,14 @@ func init() {
 	gotenv.Load("./cmd/forum/.env") //this path is relative to working dir upon go install
 }
 
-
 var Server *app.Server
 
 func main() {
+	validator.SetFieldsRequiredByDefault(true)
 
 	Server = &app.Server{
-		Port: os.Getenv("PORT"),
-		Database:&database.DbState{},
+		Port:     os.Getenv("PORT"),
+		Database: &database.DbState{},
 	}
 	Server.Database.InitState() // TODO: move to handler or cookie
 
@@ -35,8 +41,8 @@ func main() {
 
 	router.Handle("/", fs)
 
-	router.HandleFunc("/postlogin", LoginAuthHandler)
-	router.HandleFunc("/signup", SignUpHandler)
+	router.HandleFunc("/postlogin", LoginAuthHandler).Methods(http.MethodPost).Headers("Content-Type")
+	router.HandleFunc("/signup", SignUpHandler).Methods(http.MethodPost).Headers("Content-Type")
 
 	router.HandleFunc("/test", IndexHandler)
 
@@ -44,57 +50,120 @@ func main() {
 	http.ListenAndServe(":"+Server.Port, router)
 }
 
+// TODO: Javascript deal with invalid messages
 func SignUpHandler(w http.ResponseWriter, r *http.Request) {
-	if r.Method == "POST" {
-		defer r.Body.Close()
-		r.ParseForm()
-		// TODO: Validate userinput
-		email 	 := r.FormValue("email")
-		username := r.FormValue("username")
-		password := app.ConvertPlainPassword(r)
-
-		err := Server.Database.ValidateSession()
-		if err != nil {
-			fmt.Println(err)
-		}
-		user := database.User{
-			Email:email,
-			Username:username,
-			Password:password,
-		}
-		Server.Database.InsertToCollection("users", user)
-
-	} else {
-		http.Error(w, "invalid method used", http.StatusMethodNotAllowed)
+	defer r.Body.Close()
+	if r.Header.Get("Content-Type") != "application/json" {
+		w.WriteHeader(http.StatusBadRequest)
+		return
 	}
+
+	fmt.Println("Start signup!")
+	// if r.Header.Get("Content-Type") //TODO: handle different Content-Types? - or validate Content-Type
+	var rawUserData database.SignUpUser
+	rBody, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		w.WriteHeader(http.StatusForbidden)
+	}
+	err = json.Unmarshal(rBody, &rawUserData)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		fmt.Fprintln(w, "unable to login")
+		fmt.Println(string(rBody))
+	}
+
+	if valid, err := validator.ValidateStruct(rawUserData); !valid {
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			fmt.Fprintln(w, "unable to validate user")
+			fmt.Printf("unable to validate user: %v", err)
+		}
+		fmt.Fprint(w, "invalid user")
+		return
+	}
+	fmt.Println("user signup validated!")
+	hashedPass := app.ConvertPlainPassword(rawUserData.Username, rawUserData.Password)
+
+	fmt.Println("hashed password!")
+
+	err = Server.Database.ValidateSession()
+
+	fmt.Println("got through session validation!")
+	if err != nil {
+		fmt.Println(err)
+	}
+	user := database.SignUpUser{
+		Email:    rawUserData.Email,
+		Username: rawUserData.Username,
+		Password: hashedPass,
+	}
+	userStatus, err := Server.Database.IsExistingUser(user)
+	if err != nil {
+		log.Printf("failed to check user in sign up. error: %v+", err)
+	} else if userStatus != nil {
+		if strings.Contains(*userStatus, "username") {
+			w.Write([]byte("username already exist"))
+		}
+		if strings.Contains(*userStatus, "email") {
+			w.Write([]byte("\nemail already exist"))
+		}
+		return
+	}
+	w.Write([]byte("sign-up successful"))
+	Server.Database.InsertToCollection("users", user)
+
+	fmt.Println("created user for database insertion!")
+
+	Server.Database.InsertToCollection(database.TableUsers, user)
+
+	fmt.Println("user inserted in database!")
+
 }
 
 func LoginAuthHandler(w http.ResponseWriter, r *http.Request) {
-	if r.Method == "POST" {
-		defer r.Body.Close()
-		r.ParseForm()
-		// TODO: Validate userinput
-		username := r.FormValue("username")
-		password := app.ConvertPlainPassword(r)
-
-		err := Server.Database.ValidateSession()
-		if err != nil {
-			fmt.Println(err)
-		}
-		user := database.User{
-			Username:username,
-			Password:password,
-		}
-		var body []byte
-		body = []byte("login failed")
-		if Server.Database.ValidateUser(user) {
-			body = []byte("login successful")
-		}
-		w.Write(body)
-
-	} else {
-		http.Error(w, "invalid method used", http.StatusMethodNotAllowed)
+	defer r.Body.Close()
+	if r.Header.Get("Content-Type") != "application/json" {
+		w.WriteHeader(http.StatusBadRequest)
+		return
 	}
+
+	var rawUserData database.LoginUser
+	rBody, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		w.WriteHeader(http.StatusForbidden)
+	}
+	err = json.Unmarshal(rBody, &rawUserData)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		fmt.Fprintln(w, "unable to login")
+	}
+
+	if valid, err := validator.ValidateStruct(rawUserData); !valid {
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			fmt.Fprintln(w, "unable to validate user")
+			fmt.Printf("unable to validate user: %v", err)
+		}
+		fmt.Fprint(w, "invalid user")
+		return
+	}
+
+	hashedPass := app.ConvertPlainPassword(rawUserData.Username, rawUserData.Password)
+
+	err = Server.Database.ValidateSession()
+	if err != nil {
+		fmt.Println(err)
+	}
+	user := database.LoginUser{
+		Username: rawUserData.Username,
+		Password: hashedPass,
+	}
+	var body []byte
+	body = []byte("login failed")
+	if Server.Database.AuthenticateUser(user) {
+		body = []byte("login successful")
+	}
+	w.Write(body)
 }
 
 func IndexHandler(w http.ResponseWriter, r *http.Request) {
@@ -104,8 +173,8 @@ func IndexHandler(w http.ResponseWriter, r *http.Request) {
 		fmt.Println(err)
 	}
 	category := database.Category{
-		Name:"hentai",
-		Posts:99999,
+		Name:  "hentai",
+		Posts: 99999,
 	}
-	Server.Database.InsertToCollection("CatEgory", category)
+	Server.Database.InsertToCollection(database.TableCategory, category)
 }

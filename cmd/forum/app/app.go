@@ -6,9 +6,9 @@ import (
 	"crypto/rand"
 	"crypto/sha512"
 	"encoding/hex"
-	"gitlab.com/avokadoen/softsecoblig2/lib/database"
 	"io"
-	"net/http"
+
+	"gitlab.com/avokadoen/softsecoblig2/lib/database"
 )
 
 type Server struct {
@@ -16,14 +16,13 @@ type Server struct {
 	Database database.Db
 }
 
-
-func ConvertPlainPassword(r *http.Request) string{
-	password := CreateHash(r.FormValue("username"))
-	return CreateHash(password + r.FormValue("password"))
+func ConvertPlainPassword(rawUsername, rawPassword string) string {
+	hashedName := CreateHash(rawUsername)
+	return CreateHash(hashedName + rawPassword)
 }
 
 func CreateHash(key string) string {
-	hasher := sha512.New()
+	hasher := sha512.New() // TODO: maybe move so that new is only called once
 	hasher.Write([]byte(key))
 	return hex.EncodeToString(hasher.Sum(nil))
 }
