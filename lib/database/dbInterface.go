@@ -16,7 +16,8 @@ type Db interface {
 	CreateSession() (error)
 	ValidateSession() (error)
 	InsertToCollection(collectionName string, data interface{}) (error)
-	ValidateUser(user LoginUser) (bool)
+	AuthenticateUser(user LoginUser) (bool)
+	IsExistingUser(user SignUpUser) (*string, error)
 }
 
 type DbState struct {
@@ -37,7 +38,7 @@ type SignUpUser struct {
 	Id    bson.ObjectId `bson:"_id,omitempty" valid:"-, optional"`
 	Email  string       `json:"email" valid:"email, required"`
 	Username  string    `json:"username" valid:"alphanum, required"`
-	Password  string    `json:"password" valid:"matches(^[a-zA-Z0-9]$), required"`
+	Password  string    `json:"password" valid:"matches(^[a-zA-Z0-9]+$), required"`
 }
 
 type LoginUser struct {
@@ -95,12 +96,36 @@ func (db *DbState) InsertToCollection(collectionName string, data interface{}) (
 	return collection.Insert(data)
 }
 
-func (db *DbState) ValidateUser(user LoginUser) (bool) {
+func (db *DbState) AuthenticateUser(user LoginUser) (bool) {
 	collection := db.GetCollection("users")
 	//var storedUser User
-	count, _ :=collection.Find(bson.M{"username": user.Username, "password": user.Password}).Count()//.One(&storedUser)
-	if count < 1 {
+	count, err := collection.Find(bson.M{"username": user.Username, "password": user.Password}).Count()//.One(&storedUser)
+	if count < 1  || err != nil {
 		return false
 	}
 	return true
+}
+
+func (db *DbState) IsExistingUser(user SignUpUser) (*string, error) {
+	collection := db.GetCollection("users")
+	rtrString := new(string)
+	rtrNil := true
+	count, err := collection.Find(bson.M{"username": user.Username}).Count()
+	if count > 0  {
+		*rtrString = "username"
+		rtrNil = false
+	} else if err != nil {
+		return nil, err
+	}
+	count, err = collection.Find(bson.M{"email": user.Email}).Count()
+	if count > 0  || err != nil {
+		*rtrString = *rtrString+"email"
+		rtrNil = false
+	} else if err != nil {
+		return nil, err
+	}
+	if rtrNil{
+		return nil, nil
+	}
+	return rtrString, nil
 }

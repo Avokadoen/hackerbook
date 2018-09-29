@@ -22,7 +22,7 @@ func ConvertPlainPassword(username string, password string) string{
 }
 
 func CreateHash(key string) string {
-	hasher := sha512.New()
+	hasher := sha512.New() // TODO: maybe move so that new is only called once
 	hasher.Write([]byte(key))
 	return hex.EncodeToString(hasher.Sum(nil))
 }
