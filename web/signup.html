@@ -7,21 +7,28 @@
 </head>
 <body>
 <div class="center">
-    <form class="signUp" action="/postlogin" method="post" enctype="application/x-www-form-urlencoded">
+    <form class="signUp" action="JavaScript:handleSignup()">
         Username:
-        <input type="text" name="username" value="">
+        <input id="usernameInput" type="text" name="username" value="">
+        <p id="usernameMessage"></p>
         </br>
         Email:
-        <input type="text" name="email" value="">
+        <input id="emailInput" type="text" name="email" value="">
+        <p id="emailMessage"></p>
         </br>
         Password:
-        <input type="password" name="password0" value="">
+        <input id="passwordInput" type="password" name="password" value="">
+        <p id="passwordMessage"></p>
         </br>
         Confirm Password:
-        <input type="password" name="password1" value="">
+        <input id="confirmPasswordInput" type="password" name="passwordConfirm" value="">
+        <p id="confirmPasswordMessage"></p>
         </br>
-        <input type="submit" value="Sign Up">
+        <input type="Button" onClick="handleSignup(this.form)" value="SignUp">
+        <p id="errorMessage">Hei</p>
     </form>
 </div>
+<script src="jquery-3.3.1.js"></script>
+<script src="signup.js"></script>
 </body>
 </html>

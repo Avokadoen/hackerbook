@@ -4,17 +4,21 @@
     <meta charset="UTF-8">
     <link rel="stylesheet" href="web/style.css">
     <title>HackerBook</title>
+    <script src="web/jquery-3.3.1.js"></script>
+    <script src="web/login.js"></script>
 </head>
 <body>
-    <div>
-        <form action="/postlogin" method="post" enctype="application/x-www-form-urlencoded">
+    <div class = "login">
+        <form action="JavaScript:handleLogin()">
             Username:
-            <input type="text" name="username" value="">
+            <input id="usernameInput" type="text" name="username" value="">
             Password:
             <input type="password" name="password" value="">
-            <input type="submit" value="login">
+            <input type="button" onClick="handleLogin(this.form)" value="login">
         </form>
     </div>
+    <p id="loginmessage">KEK</p>
+    <p id="testpara">Test her</p>
     <h1 class="center">
         HackerBook v2A.h
     </h1>

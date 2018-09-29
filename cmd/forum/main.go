@@ -41,9 +41,9 @@ func main() {
 
 	router.Handle("/", fs)
 
-	router.HandleFunc("/postlogin", LoginAuthHandler)
-	router.HandleFunc("/signup", SignUpHandler)
-
+	router.HandleFunc("/postlogin", LoginAuthHandler).Methods(http.MethodPost)
+	router.HandleFunc("/signup", SignUpHandler).Methods(http.MethodPost)
+	//router.HandleFunc("/signup", SignUpHandler).Methods(http.MethodGet)
 	router.HandleFunc("/test", IndexHandler)
 
 	fmt.Printf("\nListening through port %v...\n", Server.Port)
@@ -52,119 +52,113 @@ func main() {
 
 // TODO: Javascript deal with invalid messages
 func SignUpHandler(w http.ResponseWriter, r *http.Request) {
-	if r.Method == "POST" {
-
-		defer r.Body.Close()
-		fmt.Println("Start signup!")
-		// if r.Header.Get("Content-Type") //TODO: handle different Content-Types? - or validate Content-Type
-		var rawUserData database.SignUpUser
-		rBody, err := ioutil.ReadAll(r.Body)
-		if err != nil {
-			w.WriteHeader(http.StatusForbidden)
-		}
-		err = json.Unmarshal(rBody, &rawUserData)
-		if err != nil {
-			w.WriteHeader(http.StatusBadRequest)
-			fmt.Fprintln(w, "unable to login")
-			fmt.Println(string(rBody))
-		}
-
-		if valid, err := validator.ValidateStruct(rawUserData); !valid {
-			if err != nil {
-				w.WriteHeader(http.StatusInternalServerError)
-				fmt.Fprintln(w, "unable to validate user")
-				fmt.Printf("unable to validate user: %v", err)
-			}
-			fmt.Fprint(w, "invalid user")
-			return
-		}
-		fmt.Println("user signup validated!")
-		hashedPass := app.ConvertPlainPassword(rawUserData.Username, rawUserData.Password)
-
-		fmt.Println("hashed password!")
-
-		err = Server.Database.ValidateSession()
-
-		fmt.Println("got through session validation!")
-		if err != nil {
-			fmt.Println(err)
-		}
-		user := database.SignUpUser{
-			Email:    rawUserData.Email,
-			Username: rawUserData.Username,
-			Password: hashedPass,
-		}
-		userStatus, err := Server.Database.IsExistingUser(user)
-		if err != nil {
-			log.Printf("failed to check user in sign up. error: %v+", err)
-		} else if userStatus != nil {
-			if strings.Contains(*userStatus, "username") {
-				w.Write([]byte("username already exist"))
-			}
-			if strings.Contains(*userStatus, "email") {
-				w.Write([]byte("\nemail already exist"))
-			}
-			return
-		}
-		w.Write([]byte("sign-up successful"))
-		Server.Database.InsertToCollection("users", user)
-
-		fmt.Println("created user for database insertion!")
-
-		Server.Database.InsertToCollection(database.TableUsers, user)
-
-		fmt.Println("user inserted in database!")
-	} else {
-		http.Error(w, "invalid method used", http.StatusMethodNotAllowed)
+	defer r.Body.Close()
+	if r.Header.Get("Content-Type") != "application/json" {
+		w.WriteHeader(http.StatusBadRequest)
+		return
 	}
+
+	fmt.Println("Start signup!")
+	var rawUserData database.SignUpUser
+	rBody, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		w.WriteHeader(http.StatusForbidden)
+	}
+	err = json.Unmarshal(rBody, &rawUserData)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		fmt.Fprintln(w, "unable to sign up")
+		fmt.Println(string(rBody))
+	}
+
+	if valid, err := validator.ValidateStruct(rawUserData); !valid {
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			fmt.Fprintln(w, "unable to validate user")
+			fmt.Printf("unable to validate user: %v", err)
+		}
+		fmt.Fprint(w, "invalid user")
+		return
+	}
+	fmt.Println("user signup validated!")
+	hashedPass := app.ConvertPlainPassword(rawUserData.Username, rawUserData.Password)
+
+	fmt.Println("hashed password!")
+
+	err = Server.Database.ValidateSession()
+
+	fmt.Println("got through session validation!")
+	if err != nil {
+		fmt.Println(err)
+	}
+	user := database.SignUpUser{
+		Email:    rawUserData.Email,
+		Username: rawUserData.Username,
+		Password: hashedPass,
+	}
+	userStatus, err := Server.Database.IsExistingUser(user)
+	if err != nil {
+		log.Printf("failed to check user in sign up. error: %v+", err)
+	} else if userStatus != nil {
+		if strings.Contains(*userStatus, "username") {
+			w.Write([]byte("username already exist"))
+		}
+		if strings.Contains(*userStatus, "email") {
+			w.Write([]byte("\nemail already exist"))
+		}
+		return
+	}
+
+	Server.Database.InsertToCollection(database.TableUsers, user)
+
+	fmt.Println("user inserted in database!")
+
 }
 
 func LoginAuthHandler(w http.ResponseWriter, r *http.Request) {
-	if r.Method == "POST" {
-		defer r.Body.Close()
-		// if r.Header.Get("Content-Type") //TODO: handle different Content-Types? - or validate Content-Type
+	defer r.Body.Close()
+	if r.Header.Get("Content-Type") != "application/json" {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
 
-		var rawUserData database.LoginUser
-		rBody, err := ioutil.ReadAll(r.Body)
-		if err != nil {
-			w.WriteHeader(http.StatusForbidden)
-		}
-		err = json.Unmarshal(rBody, &rawUserData)
+	var rawUserData database.LoginUser
+	rBody, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		w.WriteHeader(http.StatusForbidden)
+	}
+	err = json.Unmarshal(rBody, &rawUserData)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		fmt.Fprintln(w, "unable to login")
+	}
+
+	if valid, err := validator.ValidateStruct(rawUserData); !valid {
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
-			fmt.Fprintln(w, "unable to login")
+			fmt.Fprintln(w, "unable to validate user")
+			fmt.Printf("unable to validate user: %v", err)
 		}
-
-		if valid, err := validator.ValidateStruct(rawUserData); !valid {
-			if err != nil {
-				w.WriteHeader(http.StatusInternalServerError)
-				fmt.Fprintln(w, "unable to validate user")
-				fmt.Printf("unable to validate user: %v", err)
-			}
-			fmt.Fprint(w, "invalid user")
-			return
-		}
-
-		hashedPass := app.ConvertPlainPassword(rawUserData.Username, rawUserData.Password)
-
-		err = Server.Database.ValidateSession()
-		if err != nil {
-			fmt.Println(err)
-		}
-		user := database.LoginUser{
-			Username: rawUserData.Username,
-			Password: hashedPass,
-		}
-		var body []byte
-		body = []byte("login failed")
-		if Server.Database.AuthenticateUser(user) {
-			body = []byte("login successful")
-		}
-		w.Write(body)
-
-	} else {
-		http.Error(w, "invalid method used", http.StatusMethodNotAllowed)
+		fmt.Fprint(w, "invalid user")
+		return
 	}
+
+	hashedPass := app.ConvertPlainPassword(rawUserData.Username, rawUserData.Password)
+
+	err = Server.Database.ValidateSession()
+	if err != nil {
+		fmt.Println(err)
+	}
+	user := database.LoginUser{
+		Username: rawUserData.Username,
+		Password: hashedPass,
+	}
+	var body []byte
+	body = []byte("login failed")
+	if Server.Database.AuthenticateUser(user) {
+		body = []byte("login successful")
+	}
+	w.Write(body)
 }
 
 func IndexHandler(w http.ResponseWriter, r *http.Request) {
