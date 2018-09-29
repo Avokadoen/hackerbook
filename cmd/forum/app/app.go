@@ -6,8 +6,15 @@ import (
 	"crypto/rand"
 	"crypto/sha512"
 	"encoding/hex"
-	"gitlab.com/avokadoen/softsecoblig2/lib/database"
 	"io"
+
+	"gitlab.com/avokadoen/softsecoblig2/lib/database"
+)
+
+const (
+	//DATABASE TABLES
+	TableCategory = "category"
+	TableUsers    = "users"
 )
 
 type Server struct {
@@ -15,10 +22,9 @@ type Server struct {
 	Database database.Db
 }
 
-
-func ConvertPlainPassword(username string, password string) string{
-	hashedName := CreateHash(username)
-	return CreateHash(hashedName + password)
+func ConvertPlainPassword(rawUsername, rawPassword string) string {
+	hashedName := CreateHash(rawUsername)
+	return CreateHash(hashedName + rawPassword)
 }
 
 func CreateHash(key string) string {

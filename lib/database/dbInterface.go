@@ -2,10 +2,11 @@ package database
 
 import (
 	"fmt"
-	"github.com/globalsign/mgo/bson"
 	"log"
 	"os"
 	"strings"
+
+	"github.com/globalsign/mgo/bson"
 
 	"github.com/globalsign/mgo"
 	// mgo "gopkg.in/mgo.v2"
@@ -13,10 +14,10 @@ import (
 
 type Db interface {
 	InitState()
-	CreateSession() (error)
-	ValidateSession() (error)
-	InsertToCollection(collectionName string, data interface{}) (error)
-	ValidateUser(user LoginUser) (bool)
+	CreateSession() error
+	ValidateSession() error
+	InsertToCollection(collectionName string, data interface{}) error
+	ValidateUser(user LoginUser) bool
 }
 
 type DbState struct {
@@ -34,15 +35,15 @@ type Category struct {
 }
 
 type SignUpUser struct {
-	Id    bson.ObjectId `bson:"_id,omitempty" valid:"-, optional"`
-	Email  string       `json:"email" valid:"email, required"`
-	Username  string    `json:"username" valid:"alphanum, required"`
-	Password  string    `json:"password" valid:"matches(^[a-zA-Z0-9]$), required"`
+	Id       bson.ObjectId `bson:"_id,omitempty" valid:"-, optional"`
+	Email    string        `json:"email" valid:"email, required"`
+	Username string        `json:"username" valid:"alphanum, required"`
+	Password string        `json:"password" valid:"alphanum, required"`
 }
 
 type LoginUser struct {
-	Username  string    `json:"username" valid:"-"`
-	Password  string    `json:"password" valid:"-"`
+	Username string `json:"username" valid:"alphanum, required"`
+	Password string `json:"password" valid:"alphanum, required"`
 }
 
 func (db *DbState) InitState() {
@@ -61,8 +62,10 @@ func (db *DbState) CreateSession() (err error) {
 
 	url := fmt.Sprintf("mongodb://%s:%s@%s/%s", db.Username, db.Password, db.Hosts, db.DbName)
 
-	db.Session, err = mgo.Dial(url)
+	fmt.Println("Dialing the database!")
 
+	fmt.Println(url)
+	db.Session, err = mgo.Dial(url)
 
 	if db.Session == nil {
 		log.Fatal("Session was nil")
@@ -90,15 +93,15 @@ func (db *DbState) GetCollection(collectionName string) *mgo.Collection {
 	return db.Session.DB(db.DbName).C(strings.ToLower(collectionName))
 }
 
-func (db *DbState) InsertToCollection(collectionName string, data interface{}) (error) {
+func (db *DbState) InsertToCollection(collectionName string, data interface{}) error {
 	collection := db.GetCollection(collectionName)
 	return collection.Insert(data)
 }
 
-func (db *DbState) ValidateUser(user LoginUser) (bool) {
+func (db *DbState) ValidateUser(user LoginUser) bool {
 	collection := db.GetCollection("users")
 	//var storedUser User
-	count, _ :=collection.Find(bson.M{"username": user.Username, "password": user.Password}).Count()//.One(&storedUser)
+	count, _ := collection.Find(bson.M{"username": user.Username, "password": user.Password}).Count() //.One(&storedUser)
 	if count < 1 {
 		return false
 	}

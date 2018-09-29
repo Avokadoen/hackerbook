@@ -1,11 +1,14 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
-	validator "github.com/asaskevich/govalidator"
-	"gitlab.com/avokadoen/softsecoblig2/lib/database"
+	"io/ioutil"
 	"net/http"
 	"os"
+
+	validator "github.com/asaskevich/govalidator"
+	"gitlab.com/avokadoen/softsecoblig2/lib/database"
 
 	"github.com/gorilla/mux"
 	"github.com/subosito/gotenv"
@@ -18,15 +21,14 @@ func init() {
 	gotenv.Load("./cmd/forum/.env") //this path is relative to working dir upon go install
 }
 
-
 var Server *app.Server
 
 func main() {
 	validator.SetFieldsRequiredByDefault(true)
 
 	Server = &app.Server{
-		Port: os.Getenv("PORT"),
-		Database:&database.DbState{},
+		Port:     os.Getenv("PORT"),
+		Database: &database.DbState{},
 	}
 	Server.Database.InitState() // TODO: move to handler or cookie
 
@@ -49,42 +51,53 @@ func main() {
 // TODO: Javascript deal with invalid messages
 func SignUpHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method == "POST" {
+
 		defer r.Body.Close()
-		r.ParseForm()
-
-		rawEmail 	 := r.FormValue("email")
-		rawUsername := r.FormValue("username")
-		rawPassword := r.FormValue("password")
-
-
-		if !validator.IsExistingEmail(rawEmail) {
-			fmt.Fprint(w, "invalid email") // TODO: replace
-			return
+		fmt.Println("Start signup!")
+		// if r.Header.Get("Content-Type") //TODO: handle different Content-Types? - or validate Content-Type
+		var rawUserData database.SignUpUser
+		rBody, err := ioutil.ReadAll(r.Body)
+		if err != nil {
+			w.WriteHeader(http.StatusForbidden)
 		}
-		if !validator.IsAlphanumeric(rawUsername) {
-			fmt.Fprint(w, "invalid username") // TODO: replace
-			return
-		}
-		if !validator.IsAlphanumeric(rawPassword){
-			fmt.Fprint(w, "invalid password") // TODO: replace
-			return
+		err = json.Unmarshal(rBody, &rawUserData)
+		if err != nil {
+			w.WriteHeader(http.StatusBadRequest)
+			fmt.Fprintln(w, "unable to login")
+			fmt.Println(string(rBody))
 		}
 
+		if valid, err := validator.ValidateStruct(rawUserData); !valid {
+			if err != nil {
+				w.WriteHeader(http.StatusInternalServerError)
+				fmt.Fprintln(w, "unable to validate user")
+				fmt.Printf("unable to validate user: %v", err)
+			}
+			fmt.Fprint(w, "invalid user")
+			return
+		}
+		fmt.Println("user signup validated!")
+		hashedPass := app.ConvertPlainPassword(rawUserData.Username, rawUserData.Password)
 
-		password := app.ConvertPlainPassword(rawUsername, rawPassword)
+		fmt.Println("hashed password!")
 
-		err := Server.Database.ValidateSession()
+		err = Server.Database.ValidateSession()
+
+		fmt.Println("got through session validation!")
 		if err != nil {
 			fmt.Println(err)
 		}
 		user := database.SignUpUser{
-			Email:rawEmail,
-			Username:rawUsername,
-			Password:password,
+			Email:    rawUserData.Email,
+			Username: rawUserData.Username,
+			Password: hashedPass,
 		}
-		
-		Server.Database.InsertToCollection("users", user)
 
+		fmt.Println("created user for database insertion!")
+
+		Server.Database.InsertToCollection(app.TableUsers, user)
+
+		fmt.Println("user inserted in database!")
 	} else {
 		http.Error(w, "invalid method used", http.StatusMethodNotAllowed)
 	}
@@ -93,28 +106,38 @@ func SignUpHandler(w http.ResponseWriter, r *http.Request) {
 func LoginAuthHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method == "POST" {
 		defer r.Body.Close()
-		r.ParseForm()
-		rawUsername := r.FormValue("username")
-		rawPassword := r.FormValue("password")
+		// if r.Header.Get("Content-Type") //TODO: handle different Content-Types? - or validate Content-Type
 
-		if !validator.IsAlphanumeric(rawUsername) {
-			fmt.Fprint(w, "invalid username") // TODO: replace
+		var rawUserData database.LoginUser
+		rBody, err := ioutil.ReadAll(r.Body)
+		if err != nil {
+			w.WriteHeader(http.StatusForbidden)
+		}
+		err = json.Unmarshal(rBody, &rawUserData)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			fmt.Fprintln(w, "unable to login")
+		}
+
+		if valid, err := validator.ValidateStruct(rawUserData); !valid {
+			if err != nil {
+				w.WriteHeader(http.StatusInternalServerError)
+				fmt.Fprintln(w, "unable to validate user")
+				fmt.Printf("unable to validate user: %v", err)
+			}
+			fmt.Fprint(w, "invalid user")
 			return
 		}
-		if !validator.IsAlphanumeric(rawPassword){
-			fmt.Fprint(w, "invalid password") // TODO: replace
-			return
-		}
 
-		password := app.ConvertPlainPassword(rawUsername, rawPassword)
+		hashedPass := app.ConvertPlainPassword(rawUserData.Username, rawUserData.Password)
 
-		err := Server.Database.ValidateSession()
+		err = Server.Database.ValidateSession()
 		if err != nil {
 			fmt.Println(err)
 		}
 		user := database.LoginUser{
-			Username:rawUsername,
-			Password:password,
+			Username: rawUserData.Username,
+			Password: hashedPass,
 		}
 		var body []byte
 		body = []byte("login failed")
@@ -135,8 +158,8 @@ func IndexHandler(w http.ResponseWriter, r *http.Request) {
 		fmt.Println(err)
 	}
 	category := database.Category{
-		Name:"hentai",
-		Posts:99999,
+		Name:  "hentai",
+		Posts: 99999,
 	}
-	Server.Database.InsertToCollection("CatEgory", category)
+	Server.Database.InsertToCollection(app.TableCategory, category)
 }
