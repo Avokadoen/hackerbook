@@ -8,9 +8,9 @@ function handleSignup(event){
         req.open("POST", "/signup", true);
         req.setRequestHeader('Content-Type', 'application/json');
         req.send(JSON.stringify({
-            email:      event.email,
-            username:   event.username,
-            password:   event.password
+            email:      event.email.value,
+            username:   event.username.value,
+            password:   event.password.value
         }));
 
 

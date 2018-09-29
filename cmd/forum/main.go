@@ -41,8 +41,8 @@ func main() {
 
 	router.Handle("/", fs)
 
-	router.HandleFunc("/postlogin", LoginAuthHandler).Methods(http.MethodPost).Headers("Content-Type")
-	router.HandleFunc("/signup", SignUpHandler).Methods(http.MethodPost).Headers("Content-Type")
+	router.HandleFunc("/postlogin", LoginAuthHandler).Methods(http.MethodPost)
+	router.HandleFunc("/signup", SignUpHandler).Methods(http.MethodPost)
 
 	router.HandleFunc("/test", IndexHandler)
 

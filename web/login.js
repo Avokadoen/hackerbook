@@ -5,8 +5,8 @@ function handleLogin(event){
     req.open("POST", "/postlogin", true);
     req.setRequestHeader('Content-Type', 'application/json');
     req.send(JSON.stringify({
-        username: event.username,
-        password: event.password
+        username: event.username.value,
+        password: event.password.value
     }));
 
 
