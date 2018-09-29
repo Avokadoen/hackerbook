@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	validator "github.com/asaskevich/govalidator"
 	"gitlab.com/avokadoen/softsecoblig2/lib/database"
 	"net/http"
 	"os"
@@ -21,6 +22,7 @@ func init() {
 var Server *app.Server
 
 func main() {
+	validator.SetFieldsRequiredByDefault(true)
 
 	Server = &app.Server{
 		Port: os.Getenv("PORT"),
@@ -44,24 +46,43 @@ func main() {
 	http.ListenAndServe(":"+Server.Port, router)
 }
 
+// TODO: Javascript deal with invalid messages
 func SignUpHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method == "POST" {
 		defer r.Body.Close()
 		r.ParseForm()
-		// TODO: Validate userinput
-		email 	 := r.FormValue("email")
-		username := r.FormValue("username")
-		password := app.ConvertPlainPassword(r)
+
+		rawEmail 	 := r.FormValue("email")
+		rawUsername := r.FormValue("username")
+		rawPassword := r.FormValue("password")
+
+
+		if !validator.IsExistingEmail(rawEmail) {
+			fmt.Fprint(w, "invalid email") // TODO: replace
+			return
+		}
+		if !validator.IsAlphanumeric(rawUsername) {
+			fmt.Fprint(w, "invalid username") // TODO: replace
+			return
+		}
+		if !validator.IsAlphanumeric(rawPassword){
+			fmt.Fprint(w, "invalid password") // TODO: replace
+			return
+		}
+
+
+		password := app.ConvertPlainPassword(rawUsername, rawPassword)
 
 		err := Server.Database.ValidateSession()
 		if err != nil {
 			fmt.Println(err)
 		}
-		user := database.User{
-			Email:email,
-			Username:username,
+		user := database.SignUpUser{
+			Email:rawEmail,
+			Username:rawUsername,
 			Password:password,
 		}
+		
 		Server.Database.InsertToCollection("users", user)
 
 	} else {
@@ -73,16 +94,26 @@ func LoginAuthHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method == "POST" {
 		defer r.Body.Close()
 		r.ParseForm()
-		// TODO: Validate userinput
-		username := r.FormValue("username")
-		password := app.ConvertPlainPassword(r)
+		rawUsername := r.FormValue("username")
+		rawPassword := r.FormValue("password")
+
+		if !validator.IsAlphanumeric(rawUsername) {
+			fmt.Fprint(w, "invalid username") // TODO: replace
+			return
+		}
+		if !validator.IsAlphanumeric(rawPassword){
+			fmt.Fprint(w, "invalid password") // TODO: replace
+			return
+		}
+
+		password := app.ConvertPlainPassword(rawUsername, rawPassword)
 
 		err := Server.Database.ValidateSession()
 		if err != nil {
 			fmt.Println(err)
 		}
-		user := database.User{
-			Username:username,
+		user := database.LoginUser{
+			Username:rawUsername,
 			Password:password,
 		}
 		var body []byte

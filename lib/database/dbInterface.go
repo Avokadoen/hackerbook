@@ -16,7 +16,7 @@ type Db interface {
 	CreateSession() (error)
 	ValidateSession() (error)
 	InsertToCollection(collectionName string, data interface{}) (error)
-	ValidateUser(user User) (bool)
+	ValidateUser(user LoginUser) (bool)
 }
 
 type DbState struct {
@@ -28,16 +28,21 @@ type DbState struct {
 }
 
 type Category struct {
-	Id    bson.ObjectId `bson:"_id,omitempty"`
-	Name  string        `json:"name"`
-	Posts int           `json:"posts"`
+	Id    bson.ObjectId `bson:"_id,omitempty" valid:"-"`
+	Name  string        `json:"name" valid:"-"`
+	Posts int           `json:"posts" valid:"-"`
 }
 
-type User struct {
-	Id    bson.ObjectId `bson:"_id,omitempty"`
-	Email  string       `json:"email"`
-	Username  string    `json:"username"`
-	Password  string    `json:"password"`
+type SignUpUser struct {
+	Id    bson.ObjectId `bson:"_id,omitempty" valid:"-, optional"`
+	Email  string       `json:"email" valid:"email, required"`
+	Username  string    `json:"username" valid:"alphanum, required"`
+	Password  string    `json:"password" valid:"matches(^[a-zA-Z0-9]$), required"`
+}
+
+type LoginUser struct {
+	Username  string    `json:"username" valid:"-"`
+	Password  string    `json:"password" valid:"-"`
 }
 
 func (db *DbState) InitState() {
@@ -64,10 +69,9 @@ func (db *DbState) CreateSession() (err error) {
 	}
 
 	if err != nil {
-		// fmt.Print(dialInfo)
-		fmt.Errorf("died on error: %+v", err)
+		err = fmt.Errorf("died on error: %+v", err)
 	}
-	fmt.Println(1.4)
+
 	return err
 }
 
@@ -91,7 +95,7 @@ func (db *DbState) InsertToCollection(collectionName string, data interface{}) (
 	return collection.Insert(data)
 }
 
-func (db *DbState) ValidateUser(user User) (bool) {
+func (db *DbState) ValidateUser(user LoginUser) (bool) {
 	collection := db.GetCollection("users")
 	//var storedUser User
 	count, _ :=collection.Find(bson.M{"username": user.Username, "password": user.Password}).Count()//.One(&storedUser)

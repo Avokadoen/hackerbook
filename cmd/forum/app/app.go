@@ -8,7 +8,6 @@ import (
 	"encoding/hex"
 	"gitlab.com/avokadoen/softsecoblig2/lib/database"
 	"io"
-	"net/http"
 )
 
 type Server struct {
@@ -17,9 +16,9 @@ type Server struct {
 }
 
 
-func ConvertPlainPassword(r *http.Request) string{
-	password := CreateHash(r.FormValue("username"))
-	return CreateHash(password + r.FormValue("password"))
+func ConvertPlainPassword(username string, password string) string{
+	hashedName := CreateHash(username)
+	return CreateHash(hashedName + password)
 }
 
 func CreateHash(key string) string {
