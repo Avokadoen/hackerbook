@@ -11,12 +11,6 @@ import (
 	"gitlab.com/avokadoen/softsecoblig2/lib/database"
 )
 
-const (
-	//DATABASE TABLES
-	TableCategory = "category"
-	TableUsers    = "users"
-)
-
 type Server struct {
 	Port     string
 	Database database.Db
@@ -28,7 +22,7 @@ func ConvertPlainPassword(rawUsername, rawPassword string) string {
 }
 
 func CreateHash(key string) string {
-	hasher := sha512.New()
+	hasher := sha512.New() // TODO: maybe move so that new is only called once
 	hasher.Write([]byte(key))
 	return hex.EncodeToString(hasher.Sum(nil))
 }

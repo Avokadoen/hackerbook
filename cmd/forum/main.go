@@ -7,12 +7,14 @@ import (
 	"net/http"
 	"os"
 
-	validator "github.com/asaskevich/govalidator"
-	"gitlab.com/avokadoen/softsecoblig2/lib/database"
+	"log"
+	"strings"
 
+	validator "github.com/asaskevich/govalidator"
 	"github.com/gorilla/mux"
 	"github.com/subosito/gotenv"
 	"gitlab.com/avokadoen/softsecoblig2/cmd/forum/app"
+	"gitlab.com/avokadoen/softsecoblig2/lib/database"
 )
 
 // sources: https://www.thepolyglotdeveloper.com/2018/02/encrypt-decrypt-data-golang-application-crypto-packages/
@@ -92,10 +94,24 @@ func SignUpHandler(w http.ResponseWriter, r *http.Request) {
 			Username: rawUserData.Username,
 			Password: hashedPass,
 		}
+		userStatus, err := Server.Database.IsExistingUser(user)
+		if err != nil {
+			log.Printf("failed to check user in sign up. error: %v+", err)
+		} else if userStatus != nil {
+			if strings.Contains(*userStatus, "username") {
+				w.Write([]byte("username already exist"))
+			}
+			if strings.Contains(*userStatus, "email") {
+				w.Write([]byte("\nemail already exist"))
+			}
+			return
+		}
+		w.Write([]byte("sign-up successful"))
+		Server.Database.InsertToCollection("users", user)
 
 		fmt.Println("created user for database insertion!")
 
-		Server.Database.InsertToCollection(app.TableUsers, user)
+		Server.Database.InsertToCollection(database.TableUsers, user)
 
 		fmt.Println("user inserted in database!")
 	} else {
@@ -141,7 +157,7 @@ func LoginAuthHandler(w http.ResponseWriter, r *http.Request) {
 		}
 		var body []byte
 		body = []byte("login failed")
-		if Server.Database.ValidateUser(user) {
+		if Server.Database.AuthenticateUser(user) {
 			body = []byte("login successful")
 		}
 		w.Write(body)
@@ -161,5 +177,5 @@ func IndexHandler(w http.ResponseWriter, r *http.Request) {
 		Name:  "hentai",
 		Posts: 99999,
 	}
-	Server.Database.InsertToCollection(app.TableCategory, category)
+	Server.Database.InsertToCollection(database.TableCategory, category)
 }
