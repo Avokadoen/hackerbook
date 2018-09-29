@@ -41,9 +41,9 @@ func main() {
 
 	router.Handle("/", fs)
 
-	router.HandleFunc("/postlogin", LoginAuthHandler).Methods(http.MethodPost).Headers("Content-Type")
-	router.HandleFunc("/signup", SignUpHandler).Methods(http.MethodPost).Headers("Content-Type")
-
+	router.HandleFunc("/postlogin", LoginAuthHandler).Methods(http.MethodPost)
+	router.HandleFunc("/signup", SignUpHandler).Methods(http.MethodPost)
+	//router.HandleFunc("/signup", SignUpHandler).Methods(http.MethodGet)
 	router.HandleFunc("/test", IndexHandler)
 
 	fmt.Printf("\nListening through port %v...\n", Server.Port)
@@ -59,7 +59,6 @@ func SignUpHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	fmt.Println("Start signup!")
-	// if r.Header.Get("Content-Type") //TODO: handle different Content-Types? - or validate Content-Type
 	var rawUserData database.SignUpUser
 	rBody, err := ioutil.ReadAll(r.Body)
 	if err != nil {
@@ -109,10 +108,6 @@ func SignUpHandler(w http.ResponseWriter, r *http.Request) {
 		}
 		return
 	}
-	w.Write([]byte("sign-up successful"))
-	Server.Database.InsertToCollection("users", user)
-
-	fmt.Println("created user for database insertion!")
 
 	Server.Database.InsertToCollection(database.TableUsers, user)
 
