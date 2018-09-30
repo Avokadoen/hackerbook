@@ -35,16 +35,18 @@ func main() {
 	Server.Database.InitState() // TODO: move to handler or cookie
 
 	router := mux.NewRouter().StrictSlash(false)
-	fs := http.FileServer(http.Dir("./web/"))
+	fs := http.FileServer(http.Dir("./web"))
 	fmt.Printf("%+v\n", fs)
+
 	router.PathPrefix("/web/").Handler(http.StripPrefix("/web/", fs))
 
-	router.Handle("/", fs)
-
-	router.HandleFunc("/postlogin", LoginAuthHandler).Methods(http.MethodPost)
-	router.HandleFunc("/signup", SignUpHandler).Methods(http.MethodPost)
-	//router.HandleFunc("/signup", SignUpHandler).Methods(http.MethodGet)
+	router.HandleFunc("/postlogin", LoginAuthHandler).Methods(http.MethodPost).Headers("Content-Type", "application/json")
+	router.HandleFunc("/signup", SignUpHandler).Methods(http.MethodPost).Headers("Content-Type", "application/json")
 	router.HandleFunc("/test", IndexHandler)
+
+	// router.HandleFunc("/", fs.ServeHTTP)
+
+	router.HandleFunc("/", app.GenerateHomePage)
 
 	fmt.Printf("\nListening through port %v...\n", Server.Port)
 	http.ListenAndServe(":"+Server.Port, router)

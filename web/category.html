@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <link rel="stylesheet" href="web/style.css">
-    <title>HackerBook</title>
+    <title>HackerBook - $CATEGORY</title>
     <link rel="shortcut icon" type="image/png" href="/web/favicon.png" />
     <script src="web/jquery-3.3.1.js"></script>
     <script src="web/login.js"></script>
@@ -25,9 +25,9 @@
     </h1>
     <div class="center">
         <ul>
-            {{range .Categories}}
-                <h2 class="noPad"><a href="web/category/{{ .Name }}">{{ .Name }}</h2>
-                <h5 class="noPad">{{len .Topics}} Topics</h5>
+            {{range .Topics}}
+            <h2 class="noPad">{{.Title}}</h2>
+            <h5 class="noPad">{{.CreatedBy}}</h5>
             {{end}}
         </ul>
     </div>
