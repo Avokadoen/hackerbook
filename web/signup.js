@@ -18,7 +18,7 @@ function handleSignup(event){
             answer = this.responseText;
             document.getElementById("errorMessage").innerHTML = answer;
             if(answer === "") {
-                document.getElementById("signedUpMessage").innerHTML = "Okey! Cool! Click here to login now :)";
+                document.getElementById("signedUpMessage").innerHTML = "Okey! Cool! Soooo, click here to login now :)";
             }
         }
     }
