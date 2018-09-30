@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/globalsign/mgo/bson"
 	"io/ioutil"
 	"net/http"
 	"os"
@@ -33,16 +34,18 @@ func main() {
 		Database: &database.DbState{},
 	}
 	Server.Database.InitState() // TODO: move to handler or cookie
-
+	app.InitSecureCookie() 		// TODO: interface and make sure there always is a securecookie
 	router := mux.NewRouter().StrictSlash(false)
 	fs := http.FileServer(http.Dir("./web"))
 	fmt.Printf("%+v\n", fs)
 
 	router.PathPrefix("/web/").Handler(http.StripPrefix("/web/", fs))
 
-	//API ENDPOINTS
-	router.HandleFunc("/postlogin", LoginAuthHandler).Methods(http.MethodPost).Headers("Content-Type", "application/json")
+	router.HandleFunc("/cookielogin", CookieLoginHandler).Methods(http.MethodPost)
+	router.HandleFunc("/postlogin", ManualLoginHandler).Methods(http.MethodPost).Headers("Content-Type", "application/json")
 	router.HandleFunc("/signup", SignUpHandler).Methods(http.MethodPost).Headers("Content-Type", "application/json")
+	//router.HandleFunc("/signup", SignUpHandler).Methods(http.MethodGet)
+
 	router.HandleFunc("/test", IndexHandler)
 
 	// router.HandleFunc("/", fs.ServeHTTP)
@@ -120,7 +123,29 @@ func SignUpHandler(w http.ResponseWriter, r *http.Request) {
 
 }
 
-func LoginAuthHandler(w http.ResponseWriter, r *http.Request) {
+func CookieLoginHandler(w http.ResponseWriter, r *http.Request)(){
+	defer r.Body.Close()
+	cookie := app.FetchCookie(r)
+	if len(cookie.Token) <= 0 {
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte("failed login"))
+		return
+	}
+	encodedDbCookie := new(database.CookieData)
+
+	Server.Database.GetCookie(cookie, encodedDbCookie)
+	dbData := app.DecodeDBCookieData(*encodedDbCookie)
+
+	if dbData != cookie {
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte("failed to validate cookie"))
+		return
+	}
+	username := Server.Database.GetUsername(cookie.Id)
+	w.Write([]byte(username))
+}
+
+func ManualLoginHandler(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 	if r.Header.Get("Content-Type") != "application/json" {
 		w.WriteHeader(http.StatusBadRequest)
@@ -160,10 +185,23 @@ func LoginAuthHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	var body []byte
 	body = []byte("login failed")
-	if Server.Database.AuthenticateUser(user) {
+	userDBId := Server.Database.AuthenticateUser(user)
+	if userDBId != bson.ObjectId(0) {
 		body = []byte("login successful")
+		encoded := app.CreateCookie(w, userDBId, r.URL.Path)
+		if encoded == "" {
+			fmt.Println("failed to create cookie from main")
+			return
+		}
+		dbCookie := database.CookieData{
+			Id:userDBId,
+			Token:encoded,
+		}
+		Server.Database.DeleteCookie(dbCookie.Id)
+		Server.Database.InsertToCollection(database.TableCookie, dbCookie)
 	}
 	w.Write(body)
+
 }
 
 func IndexHandler(w http.ResponseWriter, r *http.Request) {
