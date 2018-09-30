@@ -1,3 +1,5 @@
+var loginClone;
+
 function handleLogin(event){
     var answer = "Something went wrong";
     var req = new XMLHttpRequest();
@@ -12,10 +14,15 @@ function handleLogin(event){
 
     req.onload = function() {
         answer = this.responseText;
-        document.getElementById("loginmessage").innerHTML = answer + " " + event.username.value + " " + event.password.value;
+        document.getElementById("loginMessage").innerHTML = answer;
+        if(answer === "login successful"){
+            loginClone = $("#login").clone()
+            $('#login').html("You are logged in as " + event.username.value  + "<input type=\"button\" onClick=\"handleSignout()\" value=\"Signout\">");
+        }
     }
 }
 
-$("#usernameInput").on('input', function (entry){
-    document.getElementById("testpara").innerHTML = entry.target.value;
-});
+function handleSignout(){
+    $('#login').html(loginClone);
+    document.getElementById("loginMessage").innerHTML = "Signed out successfully";
+}

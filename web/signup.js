@@ -17,6 +17,9 @@ function handleSignup(event){
         req.onload = function() {
             answer = this.responseText;
             document.getElementById("errorMessage").innerHTML = answer;
+            if(answer === "") {
+                document.getElementById("signedUpMessage").innerHTML = "Okey! Cool! Click here to login now :)";
+            }
         }
     }
     else{
@@ -58,7 +61,7 @@ $("#passwordInput").on('input', function (entry){
 });
 
 $("#confirmPasswordInput").on('input', function (entry){
-    if(entry.target.value != PW){
+    if(entry.target.value !== PW){
         document.getElementById("confirmPasswordMessage").innerHTML = "Passwords doesn't match!";
     }
     else{
@@ -98,7 +101,7 @@ function validatePassword(password){
 }
 
 function validateConfirmPassword(confirmPassword, password){
-    if(password.value != confirmPassword){
+    if(password.value !== confirmPassword){
         return false;
     }
     else{
