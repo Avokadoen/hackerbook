@@ -11,9 +11,9 @@ function tryCookieLogin(){
 
     req.onload = function() {
         answer = this.responseText;
-        document.getElementById("loginMessage").innerHTML = answer;
-        loggedInUser = answer;
-        if(answer !== ""){
+        //document.getElementById("loginMessage").innerHTML = answer;
+        if(answer !== "" && this.status === 200){
+            loggedInUser = answer;
             loginClone = $("#login").clone();
             $('#login').html("You are logged in as " + loggedInUser  + "<input type=\"button\" onClick=\"handleSignout()\" value=\"Signout\">");
         }
@@ -57,3 +57,4 @@ function isLoggedIn(){
         return false;
     }
 }
+
