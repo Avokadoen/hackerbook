@@ -1,6 +1,7 @@
 package app
 
 import (
+	"fmt"
 	"html/template"
 	"net/http"
 
@@ -21,7 +22,8 @@ type Category struct {
 
 //Topic within a category
 type Topic struct {
-	Title     string `json:"name"`
+	Id        bson.ObjectId `json:"_id, omitempty"`
+	Title     string        `json:"name"`
 	Content   string
 	Comments  []Comment
 	CreatedBy bson.ObjectId `json:""` //user
@@ -35,13 +37,15 @@ type Comment struct {
 }
 
 func GenerateHomePage(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("Generating Home Page")
+
 	//TODO: get stuff from DB... for now I'll use mocked data
 	tmpl := template.Must(template.ParseFiles("./web/index.html"))
 
 	data := HomePage{
 		Categories: []Category{
 			{
-				Name: "fishing",
+				Name: "phishing",
 				Topics: []Topic{
 					{
 						Title:     "How to deal with Catfish",
@@ -62,7 +66,7 @@ func GenerateHomePage(w http.ResponseWriter, r *http.Request) {
 				},
 			},
 			{
-				Name: "hentai",
+				Name: "programming",
 				Topics: []Topic{
 					{
 						Title:     "How to deal with Catfish",
@@ -81,6 +85,26 @@ func GenerateHomePage(w http.ResponseWriter, r *http.Request) {
 						},
 					},
 				},
+			},
+			{
+				Name:   "programming",
+				Topics: []Topic{{}, {}, {}},
+			},
+			{
+				Name:   "cooking",
+				Topics: []Topic{{}, {}, {}, {}, {}, {}, {}, {}, {}},
+			},
+			{
+				Name:   "movies",
+				Topics: []Topic{{}, {}, {}, {}, {}},
+			},
+			{
+				Name:   "lifehacks",
+				Topics: []Topic{{}, {}, {}, {}, {}, {}, {}},
+			},
+			{
+				Name:   "MORE",
+				Topics: []Topic{{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}},
 			},
 		},
 	}
@@ -88,14 +112,18 @@ func GenerateHomePage(w http.ResponseWriter, r *http.Request) {
 }
 
 func GenerateCategoryPage(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
+	fmt.Println("Generating Category Page")
+
+	//TODO: get stuff from DB... for now I'll use mocked data
+	vars := mux.Vars(r) //use vars to obtain data from db
 
 	tmpl := template.Must(template.ParseFiles("./web/category.html"))
 
 	data := Category{
-		Name: vars["topic"],
+		Name: vars["category"],
 		Topics: []Topic{
 			{
+				Id:        bson.ObjectId("5bb0ed24ed8bad61aa93bd31"),
 				Title:     "How to deal with Catfish",
 				Content:   "How? please discuss bellow",
 				CreatedBy: bson.ObjectId("5bb0ed24ed8bad61aa93bd85"),
@@ -113,5 +141,43 @@ func GenerateCategoryPage(w http.ResponseWriter, r *http.Request) {
 			},
 		},
 	}
+	tmpl.Execute(w, data)
+}
+
+func GenerateTopicPage(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("Generating Topic Page")
+	//TODO: get stuff from DB... for now I'll use mocked data
+	vars := mux.Vars(r) //use vars to obtain data from db
+
+	tmpl, err := template.ParseFiles("./web/topic.html")
+
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	data := struct {
+		Category string
+		Topic    Topic
+	}{
+		vars["category"],
+		Topic{
+			Id:        bson.ObjectId("5bb0ed24ed8bad61aa93bd31"),
+			Title:     "How to deal with Catfish",
+			Content:   "How? please discuss bellow",
+			CreatedBy: bson.ObjectId("5bb0ed24ed8bad61aa93bd85"),
+			Comments: []Comment{
+				{
+					Text:      "I also want to know this, caught one earlier this week, only just realized it was a catfish :(",
+					CreatedBy: bson.ObjectId("5bb0ed4fed8bad61aa93bf4e"),
+				},
+				{
+					//scriptkiddie user
+					Text:      "<script>alert(\"get hacked boi!\")</script>",
+					CreatedBy: bson.ObjectId("5bb0ed24ed8bad61aa93bd85"),
+				},
+			},
+		},
+	}
+
 	tmpl.Execute(w, data)
 }

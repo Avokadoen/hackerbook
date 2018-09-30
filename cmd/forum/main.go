@@ -48,7 +48,8 @@ func main() {
 	// router.HandleFunc("/", fs.ServeHTTP)
 	// PAGE HANDLES
 	router.HandleFunc("/", app.GenerateHomePage)
-	router.HandleFunc("/r/{topic}", app.GenerateCategoryPage)
+	router.HandleFunc("/r/{category}", app.GenerateCategoryPage)
+	router.HandleFunc("/r/{category}/{topicID}", app.GenerateTopicPage)
 
 	fmt.Printf("\nListening through port %v...\n", Server.Port)
 	http.ListenAndServe(":"+Server.Port, router)
