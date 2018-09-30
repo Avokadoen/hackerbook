@@ -36,17 +36,22 @@ func main() {
 	Server.Database.InitState() // TODO: move to handler or cookie
 	app.InitSecureCookie() 		// TODO: interface and make sure there always is a securecookie
 	router := mux.NewRouter().StrictSlash(false)
-	fs := http.FileServer(http.Dir("./web/"))
+	fs := http.FileServer(http.Dir("./web"))
 	fmt.Printf("%+v\n", fs)
+
 	router.PathPrefix("/web/").Handler(http.StripPrefix("/web/", fs))
 
-	router.Handle("/", fs)
-
-	router.HandleFunc("/postlogin", ManualLoginHandler).Methods(http.MethodPost)
 	router.HandleFunc("/cookielogin", CookieLoginHandler).Methods(http.MethodPost)
-	router.HandleFunc("/signup", SignUpHandler).Methods(http.MethodPost)
+	router.HandleFunc("/postlogin", ManualLoginHandler).Methods(http.MethodPost).Headers("Content-Type", "application/json")
+	router.HandleFunc("/signup", SignUpHandler).Methods(http.MethodPost).Headers("Content-Type", "application/json")
 	//router.HandleFunc("/signup", SignUpHandler).Methods(http.MethodGet)
+
 	router.HandleFunc("/test", IndexHandler)
+
+	// router.HandleFunc("/", fs.ServeHTTP)
+	// PAGE HANDLES
+	router.HandleFunc("/", app.GenerateHomePage)
+	router.HandleFunc("/r/{topic}", app.GenerateCategoryPage)
 
 	fmt.Printf("\nListening through port %v...\n", Server.Port)
 	http.ListenAndServe(":"+Server.Port, router)

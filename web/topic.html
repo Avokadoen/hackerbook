@@ -2,10 +2,26 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <<link rel="stylesheet" href="style.css">>
+    <link rel="stylesheet" href="/web/style.css">
     <title>$POSTTITLE</title>
+    <script src="/web/jquery-3.3.1.js"></script>
+    <script src="/web/login.js"></script>
+    <script src="/web/comment.js"></script>
+    <link rel="shortcut icon" type="image/png" href="/web/favicon.png" />
 </head>
 <body>
+    <script>tryCookieLogin();</script>
+    <div id="login" class ="login">
+        <form action="JavaScript:handleLogin()">
+            Username:
+            <input id="usernameInput" type="text" name="username" value="">
+            Password:
+            <input type="password" name="password" value="">
+            <input type="button" onClick="handleLogin(this.form)" value="login">
+            <a href="signup.html">No account yet? Sign up here!</a>
+        </form>
+    </div>
+    <p id="loginMessage"></p>
     <h1 class="center">
         TOPIC
     </h1>
@@ -36,6 +52,14 @@
             <p>
                 $COMMENT
             </p>
+        </div>
+        <div id="postComment" class="postComment">
+            <form action="JavaScript:postComment()">
+                Comment:</br>
+                <textarea id="commentInput" name="commentInput" cols="80" rows="10"></textarea>
+                <input type="button" onClick="postComment(this.form)" value="Post Comment">
+            </form>
+            <p id="commentMessage"></p>
         </div>
     </div>
 
