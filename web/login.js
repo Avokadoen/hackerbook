@@ -26,3 +26,7 @@ function handleSignout(){
     $('#login').html(loginClone);
     document.getElementById("loginMessage").innerHTML = "Signed out successfully";
 }
+
+function isLoggedIn(){
+
+}

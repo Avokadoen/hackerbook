@@ -27,7 +27,7 @@ div.comment{
     padding-right: 10px;
 
 }
-input {
+input, textarea {
     background-color: black;
     color: lawngreen;
     border: 1px solid lawngreen;

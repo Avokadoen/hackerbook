@@ -2,10 +2,23 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <<link rel="stylesheet" href="style.css">>
+    <link rel="stylesheet" href="style.css">
     <title>$POSTTITLE</title>
+    <script src="jquery-3.3.1.js"></script>
+    <script src="login.js"></script>
+    <script src="comment.js"></script>
 </head>
 <body>
+    <div id="login" class ="login">
+        <form action="JavaScript:handleLogin()">
+            Username:
+            <input id="usernameInput" type="text" name="username" value="">
+            Password:
+            <input type="password" name="password" value="">
+            <input type="button" onClick="handleLogin(this.form)" value="login">
+            <a href="signup.html">No account yet? Sign up here!</a>
+        </form>
+    </div>
     <h1 class="center">
         TOPIC
     </h1>
@@ -36,6 +49,14 @@
             <p>
                 $COMMENT
             </p>
+        </div>
+        <div id="postComment" class="postComment">
+            <form action="JavaScript:postComment()">
+                Comment:</br>
+                <textarea id="commentInput" name="commentInput" cols="80" rows="10"></textarea>
+                <input type="button" onClick="postComment(this.form)" value="Post Comment">
+            </form>
+            <p id="commentMessage"></p>
         </div>
     </div>
 
