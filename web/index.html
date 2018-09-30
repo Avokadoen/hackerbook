@@ -9,17 +9,17 @@
     <script src="web/login.js"></script>
 </head>
 <body>
-    <div class = "login">
+    <div id="login" class ="login">
         <form action="JavaScript:handleLogin()">
             Username:
             <input id="usernameInput" type="text" name="username" value="">
             Password:
             <input type="password" name="password" value="">
             <input type="button" onClick="handleLogin(this.form)" value="login">
+            <a href="web/signup.html">No account yet? Sign up here!</a>
         </form>
     </div>
-    <p id="loginmessage">KEK</p>
-    <p id="testpara">Test her</p>
+    <p id="loginMessage"></p>
     <h1 class="center">
         HackerBook v2A.h
     </h1>
