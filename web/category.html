@@ -2,11 +2,11 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <link rel="stylesheet" href="web/style.css">
-    <title>HackerBook - $CATEGORY</title>
+    <link rel="stylesheet" href="/web/style.css">
+    <title>HackerBook - {{ .Name }}</title>
     <link rel="shortcut icon" type="image/png" href="/web/favicon.png" />
-    <script src="web/jquery-3.3.1.js"></script>
-    <script src="web/login.js"></script>
+    <script src="/web/jquery-3.3.1.js"></script>
+    <script src="/web/login.js"></script>
 </head>
 <body>
     <div id="login" class ="login">
@@ -16,18 +16,21 @@
             Password:
             <input type="password" name="password" value="">
             <input type="button" onClick="handleLogin(this.form)" value="login">
-            <a href="web/signup.html">No account yet? Sign up here!</a>
+        </form>
+        No account yet?
+        <form  action="/web/signup.html">
+            <input type="submit" value="Sign up!"></input>
         </form>
     </div>
     <p id="loginMessage"></p>
-    <h1 class="center">
-        HackerBook v2A.h
-    </h1>
+    <h1 class="center">HackerBook v2A.h</h1>
+    <h2 class="center">{{ .Name }}</h2>
     <div class="center">
         <ul>
             {{range .Topics}}
-            <h2 class="noPad">{{.Title}}</h2>
-            <h5 class="noPad">{{.CreatedBy}}</h5>
+            <h2 class="noPad">{{ .Title }}</h2>
+            <h5 class="noPad">{{ .CreatedBy }}</h5>
+            <h5 class="noPad">{{ len .Comments }}</h5>
             {{end}}
         </ul>
     </div>

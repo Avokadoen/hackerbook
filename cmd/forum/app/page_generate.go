@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/globalsign/mgo/bson"
+	"github.com/gorilla/mux"
 )
 
 type HomePage struct {
@@ -87,5 +88,30 @@ func GenerateHomePage(w http.ResponseWriter, r *http.Request) {
 }
 
 func GenerateCategoryPage(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
 
+	tmpl := template.Must(template.ParseFiles("./web/category.html"))
+
+	data := Category{
+		Name: vars["topic"],
+		Topics: []Topic{
+			{
+				Title:     "How to deal with Catfish",
+				Content:   "How? please discuss bellow",
+				CreatedBy: bson.ObjectId("5bb0ed24ed8bad61aa93bd85"),
+				Comments: []Comment{
+					{
+						Text:      "I also want to know this, caught one earlier this week, only just realized it was a catfish :(",
+						CreatedBy: bson.ObjectId("5bb0ed4fed8bad61aa93bf4e"),
+					},
+					{
+						//scriptkiddie user
+						Text:      "<script>alert(\"get hacked boi!\")</script>",
+						CreatedBy: bson.ObjectId("5bb0ed24ed8bad61aa93bd85"),
+					},
+				},
+			},
+		},
+	}
+	tmpl.Execute(w, data)
 }

@@ -40,13 +40,15 @@ func main() {
 
 	router.PathPrefix("/web/").Handler(http.StripPrefix("/web/", fs))
 
+	//API ENDPOINTS
 	router.HandleFunc("/postlogin", LoginAuthHandler).Methods(http.MethodPost).Headers("Content-Type", "application/json")
 	router.HandleFunc("/signup", SignUpHandler).Methods(http.MethodPost).Headers("Content-Type", "application/json")
 	router.HandleFunc("/test", IndexHandler)
 
 	// router.HandleFunc("/", fs.ServeHTTP)
-
+	// PAGE HANDLES
 	router.HandleFunc("/", app.GenerateHomePage)
+	router.HandleFunc("/r/{topic}", app.GenerateCategoryPage)
 
 	fmt.Printf("\nListening through port %v...\n", Server.Port)
 	http.ListenAndServe(":"+Server.Port, router)
