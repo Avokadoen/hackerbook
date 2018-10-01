@@ -6,15 +6,8 @@ import (
 	"crypto/rand"
 	"crypto/sha512"
 	"encoding/hex"
-	"fmt"
-
-	"github.com/globalsign/mgo/bson"
-	"github.com/gorilla/securecookie"
 	"gitlab.com/avokadoen/softsecoblig2/lib/database"
 	"io"
-	"net/http"
-	"net/url"
-	"time"
 )
 
 /* sources:
@@ -25,10 +18,6 @@ type Server struct {
 	Port     string
 	Database database.Db
 }
-
-const CookieName = "HackerBook"
-const CookieExpiration = time.Hour
-var secureCookieInstance = &securecookie.SecureCookie{}
 
 func ConvertPlainPassword(rawUsername, rawPassword string) string {
 	hashedName := CreateHash(rawUsername)
@@ -72,68 +61,4 @@ func Decrypt(data []byte, passphrase string) []byte {
 		panic(err.Error())
 	}
 	return plaintext
-}
-
-// TODO: we need to recreate securecookie if it is nil
-func InitSecureCookie(){
-	secureCookieInstance = securecookie.New(securecookie.GenerateRandomKey(32), securecookie.GenerateRandomKey(32))
-}
-
-func FetchCookie(r *http.Request) database.CookieData{
-
-	cookieData := database.CookieData{}
-
-	cookie, err := r.Cookie(CookieName)
-	if err != nil {
-		fmt.Printf("when requesting cookie error: %v+", err)
-		return cookieData
-	}
-	err = secureCookieInstance.Decode(CookieName, cookie.Value, &cookieData)
-	if err != nil {
-		fmt.Printf("when decoding cookie error: %v+", err)
-	}
-
-	return cookieData
-}
-
-func CreateCookie(w http.ResponseWriter, m bson.ObjectId, urlString string) (string) {
-	timeCreated := time.Now().UnixNano()
-	token := CreateHash(string(timeCreated))
-	userID := m
-
-	u, err := url.Parse(urlString)
-	if err != nil {
-		fmt.Printf("error at url parse error: %v+", err)
-		return ""
-	}
-	cookieData := database.CookieData {
-		Id: userID,
-		Token: token,
-	}
-	if encoded, err := secureCookieInstance.Encode(CookieName, cookieData); err == nil {
-		tokenCookie := http.Cookie{
-			Name:     CookieName,
-			Value:    encoded,
-			HttpOnly: true,
-			Domain:   u.Hostname(),
-			Expires:  time.Now().Add(CookieExpiration),
-		}
-		fmt.Println("created cookie")
-
-		http.SetCookie(w, &tokenCookie)
-		return encoded
-	}
-	fmt.Println("failed to create cookie")
-	return ""
-}
-
-func DecodeDBCookieData(data database.CookieData) database.CookieData{
-
-	decodeData := database.CookieData{}
-	err := secureCookieInstance.Decode(CookieName, data.Token, &decodeData)
-	if err != nil {
-		fmt.Printf("when decoding dbCookie error: %v+", err)
-		return database.CookieData{}
-	}
-	return decodeData
 }

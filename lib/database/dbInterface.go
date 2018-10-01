@@ -42,6 +42,8 @@ type DbState struct {
 	Session  *mgo.Session
 }
 
+
+
 type SignUpUser struct {
 	Id       bson.ObjectId `bson:"_id,omitempty" valid:"-, optional"`
 	Email    string        `json:"email" valid:"email, required"`
