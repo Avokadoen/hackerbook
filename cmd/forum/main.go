@@ -44,6 +44,7 @@ func main() {
 	router.HandleFunc("/cookielogin", CookieLoginHandler).Methods(http.MethodPost)
 	router.HandleFunc("/postlogin", ManualLoginHandler).Methods(http.MethodPost).Headers("Content-Type", "application/json")
 	router.HandleFunc("/signup", SignUpHandler).Methods(http.MethodPost).Headers("Content-Type", "application/json")
+	router.HandleFunc("/signout", SignOutHandler).Methods(http.MethodPost).Headers("Content-Type", "application/json")
 	//router.HandleFunc("/signup", SignUpHandler).Methods(http.MethodGet)
 
 	router.HandleFunc("/test", IndexHandler)
@@ -57,7 +58,6 @@ func main() {
 	http.ListenAndServe(":"+Server.Port, router)
 }
 
-// TODO: Javascript deal with invalid messages
 func SignUpHandler(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 	if r.Header.Get("Content-Type") != "application/json" {
@@ -119,6 +119,10 @@ func SignUpHandler(w http.ResponseWriter, r *http.Request) {
 	Server.Database.InsertToCollection(database.TableUsers, user)
 
 	fmt.Println("user inserted in database!")
+
+}
+
+func SignOutHandler(w http.ResponseWriter, r *http.Request) {
 
 }
 
