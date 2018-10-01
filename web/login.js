@@ -52,6 +52,7 @@ function handleSignout(){
 
     req.onload = function(){
         $('#login').html(loginClone);
+        $("div.login").show();
         document.getElementById("loginMessage").innerHTML = "Signed out successfully";
     }
 }
