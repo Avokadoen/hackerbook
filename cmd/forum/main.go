@@ -45,6 +45,7 @@ func main() {
 	router.HandleFunc("/cookielogin", CookieLoginHandler).Methods(http.MethodPost)
 	router.HandleFunc("/postlogin", ManualLoginHandler).Methods(http.MethodPost).Headers("Content-Type", "application/json")
 	router.HandleFunc("/signup", SignUpHandler).Methods(http.MethodPost).Headers("Content-Type", "application/json")
+	router.HandleFunc("/postcomment", PostCommentHandler).Methods(http.MethodPost).Headers("Content-Type", "application/json")
 	//router.HandleFunc("/signup", SignUpHandler).Methods(http.MethodGet)
 
 	router.HandleFunc("/test", IndexHandler)
@@ -215,4 +216,32 @@ func IndexHandler(w http.ResponseWriter, r *http.Request) {
 		Name: "hentai",
 	}
 	Server.Database.InsertToCollection(database.TableCategory, category)
+}
+
+func PostCommentHandler (w http.ResponseWriter, r *http.Request){
+	// TODO Get topic id
+	err := Server.Database.ValidateSession()
+	if err != nil{
+		//error piss
+	}
+	// TODO Aksel fiks get user
+	var commentRaw database.Comment
+	rBody, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		w.WriteHeader(http.StatusForbidden)
+		fmt.Fprintln(w, "unable to read")
+	}
+	err = json.Unmarshal(rBody, &commentRaw)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		fmt.Fprintln(w, "unable to unmarshal")
+	}
+	comment := database.Comment{
+		CommentID: "12309712", 		// TODO generate id
+		Username: "kek", 			// TODO Aksel fiks get user
+		Text: "Hello world",		// TODO hent den her fra r på en måte
+	}
+
+	Server.Database.InsertToCollection(database.TableComment, comment)
+	// TODO få lagt den inn i topic?
 }
