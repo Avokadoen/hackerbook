@@ -72,7 +72,6 @@ type Topic struct {
 }
 
 type Comment struct {
-	CommentID bson.ObjectId `bson:"_id,omitempty" valid:"-, optional"`
 	Username 	string `json:"username" valid:"alphanum, required"`
 	Text 		string `json:"username" valid:"alphanum, required"`
 }

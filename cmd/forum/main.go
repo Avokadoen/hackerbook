@@ -19,8 +19,10 @@ import (
 	"gitlab.com/avokadoen/softsecoblig2/lib/database"
 )
 
-// sources: https://www.thepolyglotdeveloper.com/2018/02/encrypt-decrypt-data-golang-application-crypto-packages/
-
+/* sources:
+	https://www.thepolyglotdeveloper.com/2018/02/encrypt-decrypt-data-golang-application-crypto-packages/
+	https://www.kaihag.com/https-and-go/
+*/
 func init() {
 	gotenv.Load("./cmd/forum/.env") //this path is relative to working dir upon go install
 }
@@ -36,6 +38,7 @@ func main() {
 	}
 	Server.Database.InitState() // TODO: move to handler or cookie
 	SecureCookie.Init()
+
 	router := mux.NewRouter().StrictSlash(false)
 	fs := http.FileServer(http.Dir("./web"))
 	fmt.Printf("%+v\n", fs)
@@ -49,8 +52,6 @@ func main() {
 	router.HandleFunc("/signout", SignOutHandler).Methods(http.MethodPost).Headers("Content-Type", "application/json")
 	//router.HandleFunc("/signup", SignUpHandler).Methods(http.MethodGet)
 
-	router.HandleFunc("/test", IndexHandler)
-
 	// router.HandleFunc("/", fs.ServeHTTP)
 	// PAGE HANDLES
 	router.HandleFunc("/", GenerateHomePage)
@@ -59,6 +60,26 @@ func main() {
 
 	fmt.Printf("\nListening through port %v...\n", Server.Port)
 	http.ListenAndServe(":"+Server.Port, router)
+	//go http.ListenAndServeTLS(":"+Server.Port, "cert.pem", "key.pem", router)
+	/*
+	cfg := &tls.Config{
+		MinVersion:               tls.VersionTLS12,
+		CurvePreferences:         []tls.CurveID{tls.CurveP521, tls.CurveP384, tls.CurveP256},
+		PreferServerCipherSuites: true,
+		CipherSuites: []uint16{
+			tls.TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,
+			tls.TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA,
+			tls.TLS_RSA_WITH_AES_256_GCM_SHA384,
+			tls.TLS_RSA_WITH_AES_256_CBC_SHA,
+		},
+	}
+	srv := &http.Server{
+		Addr:         ":"+Server.Port,
+		Handler:      router,
+		TLSConfig:    cfg,
+		TLSNextProto: make(map[string]func(*http.Server, *tls.Conn, http.Handler), 0),
+	}
+	log.Fatal(srv.ListenAndServeTLS("server.crt", "server.key"))*/
 }
 
 func SignUpHandler(w http.ResponseWriter, r *http.Request) {
@@ -136,6 +157,7 @@ func SignOutHandler(w http.ResponseWriter, r *http.Request) {
 	SecureCookie.DeleteClientCookie(w, r.URL.Path) // TODO: if err
 	err := SecureCookie.DeleteDBCookie(cookie, Server)
 	if err != nil {
+		fmt.Printf("main failed to delete cookie, err: %v", err)
 		w.WriteHeader(http.StatusBadRequest)
 	}
 }
@@ -169,7 +191,7 @@ func ManualLoginHandler(w http.ResponseWriter, r *http.Request) {
 	err = json.Unmarshal(rBody, &rawUserData)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		fmt.Fprintln(w, "unable to login")
+		fmt.Printf("failed to unmarshal: %v", err)
 	}
 
 	if valid, err := validator.ValidateStruct(rawUserData); !valid {
@@ -212,40 +234,39 @@ func ManualLoginHandler(w http.ResponseWriter, r *http.Request) {
 
 }
 
-func IndexHandler(w http.ResponseWriter, r *http.Request) {
-
-	err := Server.Database.CreateSession()
-	if err != nil {
-		fmt.Println(err)
-	}
-	category := Category{
-		Name: "hentai",
-	}
-	Server.Database.InsertToCollection(database.TableCategory, category)
-}
-
 func PostCommentHandler (w http.ResponseWriter, r *http.Request){
 	// TODO Get topic id
 	err := Server.Database.ValidateSession()
 	if err != nil{
-		//error piss
+		fmt.Printf("unable to validate session, err: %v", err)
 	}
-	// TODO Aksel fiks get user
+	// TODO: should use unique postComment struct
 	var commentRaw database.Comment
 	rBody, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		w.WriteHeader(http.StatusForbidden)
-		fmt.Fprintln(w, "unable to read")
+		fmt.Printf("unable to read, err: %v", err)
 	}
 	err = json.Unmarshal(rBody, &commentRaw)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		fmt.Fprintln(w, "unable to unmarshal")
+		fmt.Printf("unable to unmarshal, err: %v", err)
 	}
+	cookie := SecureCookie.FetchCookie(r)
+	username := Server.Database.GetUsername(cookie.Id)
+
 	comment := database.Comment{
-		CommentID: "12309712", 		// TODO generate id
-		Username: "kek", 			// TODO Aksel fiks get user
-		Text: "Hello world",		// TODO hent den her fra r på en måte
+		Username: username,
+		Text: commentRaw.Text,		// TODO hent den her fra r på en måte
+	}
+
+	if valid, err := validator.ValidateStruct(comment); !valid {
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			fmt.Printf("unable to validate comment: %v", err)
+		}
+		fmt.Fprint(w, "invalid comment")
+		return
 	}
 
 	Server.Database.InsertToCollection(database.TableComment, comment)
