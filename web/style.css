@@ -10,8 +10,11 @@ div.comment{
     font-size: 13px;
 }
 div.topic{
-    font-weight:
     font-size: 24px;
+}
+
+div.login{
+    display: none;
 }
 
 div.center {
