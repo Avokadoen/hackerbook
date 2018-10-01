@@ -45,6 +45,7 @@ function handleLogin(event){
 }
 
 function handleSignout(){
+    var req = new XMLHttpRequest();
     req.open("POST", window.location.origin + "/signout", true);
     req.setRequestHeader('Content-Type', 'application/json');
     req.send();
