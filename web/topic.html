@@ -18,10 +18,15 @@
             Password:
             <input type="password" name="password" value="">
             <input type="button" onClick="handleLogin(this.form)" value="login">
-            <a href="signup.html">No account yet? Sign up here!</a>
         </form>
-    </div>style:
+        No account yet?
+        <form  action="/web/signup.html">
+            <input type="submit" value="Sign up!"></input>
+        </form>
+    </div>
+    style:
     <p id="loginMessage"></p>
+    <h1 class="center"><a href="/">HackerBook v2A.h</a></h1>
     <h1 class="center">
         {{ .Category }}
     </h1>

@@ -74,7 +74,7 @@ function validateUsername(username){
     if(username.value.match(/[^a-zA-Z0-9 ]/g)){
         return false;
     }
-    else if(username.value.length > 15){
+    else if(username.value.length > 15 && username.value.length <=0){
         return false;
     }
     else{
