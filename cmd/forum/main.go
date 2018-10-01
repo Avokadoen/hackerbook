@@ -120,11 +120,9 @@ func SignUpHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	Server.Database.InsertToCollection(database.TableUsers, user)
-
 	fmt.Println("user inserted in database!")
-
+	EmailVerification(w,r,user)
 }
-
 
 func SignOutHandler(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()

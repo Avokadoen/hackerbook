@@ -19,6 +19,7 @@ const (
 	TableCookie   = "cookie"
 	//TableTopic = "topic"
 	TableComment = "comment"
+	TableEmailToken = "eToken"
 )
 
 type Db interface {
@@ -51,6 +52,11 @@ type SignUpUser struct {
 	Email    string        `json:"email" valid:"email, required"`
 	Username string        `json:"username" valid:"alphanum, required"`
 	Password string        `json:"password" valid:"alphanum, required"`
+}
+
+type EmailToken struct { // Unverified emails
+	Username string        `json:"username" valid:"alphanum, required"`
+	Token string `json:"token" valid:"alphanum, required"`
 }
 
 type LoginUser struct {
