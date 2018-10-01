@@ -28,7 +28,7 @@
     <div class="center">
         <ul>
             {{range .Topics}}
-            <h2 class="noPad">{{ .Title }}</h2>
+            <h2 class="noPad"><a href="/r/{{ $.Name }}/{{ .Id.Hex }}">{{ html .Title }}</h2>
             <h5 class="noPad">{{ .CreatedBy }}</h5>
             <h5 class="noPad">{{ len .Comments }}</h5>
             {{end}}

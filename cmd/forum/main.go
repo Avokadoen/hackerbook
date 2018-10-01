@@ -3,10 +3,11 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/globalsign/mgo/bson"
 	"io/ioutil"
 	"net/http"
 	"os"
+
+	"github.com/globalsign/mgo/bson"
 
 	"log"
 	"strings"
@@ -25,7 +26,7 @@ func init() {
 }
 
 var Server *app.Server
-
+var SecureCookie app.SCManager// TODO: make sure there always is a securecookie
 func main() {
 	validator.SetFieldsRequiredByDefault(true)
 
@@ -34,7 +35,7 @@ func main() {
 		Database: &database.DbState{},
 	}
 	Server.Database.InitState() // TODO: move to handler or cookie
-	app.InitSecureCookie() 		// TODO: interface and make sure there always is a securecookie
+	SecureCookie.Init()
 	router := mux.NewRouter().StrictSlash(false)
 	fs := http.FileServer(http.Dir("./web"))
 	fmt.Printf("%+v\n", fs)
@@ -51,8 +52,9 @@ func main() {
 
 	// router.HandleFunc("/", fs.ServeHTTP)
 	// PAGE HANDLES
-	router.HandleFunc("/", app.GenerateHomePage)
-	router.HandleFunc("/r/{topic}", app.GenerateCategoryPage)
+	router.HandleFunc("/", GenerateHomePage)
+	router.HandleFunc("/r/{category}", GenerateCategoryPage)
+	router.HandleFunc("/r/{category}/{topicID}", GenerateTopicPage)
 
 	fmt.Printf("\nListening through port %v...\n", Server.Port)
 	http.ListenAndServe(":"+Server.Port, router)
@@ -122,13 +124,14 @@ func SignUpHandler(w http.ResponseWriter, r *http.Request) {
 
 }
 
+
 func SignOutHandler(w http.ResponseWriter, r *http.Request) {
-
-}
-
-func CookieLoginHandler(w http.ResponseWriter, r *http.Request)(){
 	defer r.Body.Close()
-	cookie := app.FetchCookie(r)
+	if r.Header.Get("Content-Type") != "application/json" {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+	cookie := SecureCookie.FetchCookie(r)
 	if len(cookie.Token) <= 0 {
 		w.WriteHeader(http.StatusBadRequest)
 		w.Write([]byte("failed login"))
@@ -137,7 +140,32 @@ func CookieLoginHandler(w http.ResponseWriter, r *http.Request)(){
 	encodedDbCookie := new(database.CookieData)
 
 	Server.Database.GetCookie(cookie, encodedDbCookie)
-	dbData := app.DecodeDBCookieData(*encodedDbCookie)
+	dbData := SecureCookie.DecodeDBCookieData(*encodedDbCookie)
+
+	SecureCookie.DeleteCookie(w, r.URL.Path)
+	if dbData != cookie {
+		w.WriteHeader(http.StatusBadRequest)
+		//w.Write([]byte("failed to validate cookie"))
+		return
+	}
+	Server.Database.DeleteCookie(dbData.Id)
+
+
+}
+
+func CookieLoginHandler(w http.ResponseWriter, r *http.Request)(){
+
+	defer r.Body.Close()
+	cookie := SecureCookie.FetchCookie(r)
+	if len(cookie.Token) <= 0 {
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte("failed login"))
+		return
+	}
+	encodedDbCookie := new(database.CookieData)
+
+	Server.Database.GetCookie(cookie, encodedDbCookie)
+	dbData := SecureCookie.DecodeDBCookieData(*encodedDbCookie)
 
 	if dbData != cookie {
 		w.WriteHeader(http.StatusBadRequest)
@@ -191,14 +219,14 @@ func ManualLoginHandler(w http.ResponseWriter, r *http.Request) {
 	userDBId := Server.Database.AuthenticateUser(user)
 	if userDBId != bson.ObjectId(0) {
 		body = []byte("login successful")
-		encoded := app.CreateCookie(w, userDBId, r.URL.Path)
+		encoded := SecureCookie.CreateCookie(w, userDBId, r.URL.Path)
 		if encoded == "" {
 			fmt.Println("failed to create cookie from main")
 			return
 		}
 		dbCookie := database.CookieData{
-			Id:userDBId,
-			Token:encoded,
+			Id:    userDBId,
+			Token: encoded,
 		}
 		Server.Database.DeleteCookie(dbCookie.Id)
 		Server.Database.InsertToCollection(database.TableCookie, dbCookie)
@@ -213,9 +241,8 @@ func IndexHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		fmt.Println(err)
 	}
-	category := database.Category{
-		Name:  "hentai",
-		Posts: 99999,
+	category := Category{
+		Name: "hentai",
 	}
 	Server.Database.InsertToCollection(database.TableCategory, category)
 }

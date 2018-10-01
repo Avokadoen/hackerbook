@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <link rel="stylesheet" href="/web/style.css">
-    <title>$POSTTITLE</title>
+    <title>{{ .Category }} - {{ .Topic.Title }}</title>
     <script src="/web/jquery-3.3.1.js"></script>
     <script src="/web/login.js"></script>
     <script src="/web/comment.js"></script>
@@ -20,39 +20,23 @@
             <input type="button" onClick="handleLogin(this.form)" value="login">
             <a href="signup.html">No account yet? Sign up here!</a>
         </form>
-    </div>
+    </div>style:
     <p id="loginMessage"></p>
     <h1 class="center">
-        TOPIC
+        {{ .Category }}
     </h1>
     <div class="center">
-        <h2 class="noPad">$TOPICNAME</h2>
-        <h5 class="noPad">$USERNAME</h5>
-        <p>
-            $WALLOFTEXT
-            Lorem ipsum dolor sit amet, consectetur adipiscing elit. Etiam scelerisque nunc neque. Integer justo justo, rutrum vel odio vel, sodales cursus neque. Donec dapibus metus lacus, vel bibendum lacus ornare vel. Aliquam consectetur turpis tortor, eget mattis ex cursus in. Etiam dignissim quis augue vel pulvinar. Aenean vel odio a lectus lobortis hendrerit. Phasellus placerat erat eget mi cursus, a rutrum nibh pulvinar. Etiam sed velit eu ipsum auctor cursus. In sed augue finibus, porta purus id, consectetur erat. Suspendisse semper velit id augue fringilla, eu mollis eros feugiat. Aliquam elementum lectus vitae nisi porttitor placerat id a metus.
-
-
-            Sed risus quam, dapibus nec mi vel, semper iaculis ex. Donec ac sollicitudin est. Vivamus et pellentesque dolor. Mauris id nibh tortor. Sed eget convallis libero. Integer eleifend velit at orci iaculis, a venenatis lectus posuere. Quisque quis rutrum erat. Curabitur vulputate, ex vitae maximus pulvinar, nunc nibh faucibus dui, eu eleifend dolor odio in dui. Donec id elit interdum, scelerisque turpis id, tempus augue.
-
-            In varius, arcu in cursus fringilla, enim ipsum efficitur dolor, sed interdum arcu dolor eu purus. Aliquam et hendrerit ex, commodo hendrerit mi. Morbi tincidunt, ante id sodales interdum, augue quam sollicitudin sem, eget auctor ante elit quis turpis. Etiam id massa sit amet lacus egestas tempus. Sed ac convallis magna. Aliquam viverra dui nec enim placerat rhoncus. Nulla molestie dui id ipsum venenatis sollicitudin. Maecenas euismod urna a odio vehicula iaculis. Sed porta ullamcorper lorem, at scelerisque enim feugiat non.
-
-            Aliquam dapibus ligula sit amet pretium luctus. Aenean non luctus elit, ut interdum metus. Nulla eleifend dictum metus quis pharetra. Duis nisi odio, pretium et lorem nec, vehicula aliquet enim. Cras id scelerisque neque. Donec dictum ipsum sed nulla dapibus, at viverra quam aliquet. Nullam sagittis maximus mauris, in dictum nunc sodales eleifend. Proin viverra sollicitudin nunc, vel vulputate lorem pretium at. Quisque venenatis purus eget lobortis suscipit. Phasellus orci libero, mollis et dignissim at, scelerisque sit amet lectus. Etiam id nunc mollis, sodales justo eu, placerat ipsum. Etiam a diam in dui vestibulum luctus quis et leo. Curabitur nec accumsan tortor. Morbi consectetur nec risus et pharetra. Ut turpis massa, sollicitudin id volutpat ut, sagittis vel arcu. Duis tempor fringilla egestas.
-
-            Curabitur hendrerit luctus nunc in efficitur. Sed fringilla ac eros vel tempor. Nam sit amet elit ullamcorper, blandit sapien in, maximus urna. Aliquam vitae aliquet diam. Vivamus iaculis dignissim gravida. Vestibulum nec lorem efficitur, imperdiet ipsum nec, varius tellus. Phasellus commodo mi id sapien malesuada, vitae pulvinar urna sagittis. Phasellus augue justo, gravida in pulvinar vitae, tristique sed nunc. Maecenas dignissim dignissim nibh, vitae ornare quam tincidunt ac.
-        </p>
-        <div class="comment">
-            <h5 class="noPad">$USERNAME</h5>
-            <p>
-                $COMMENT
-            </p>
+        <div class="topic">
+            <h2 class="noPad">{{ html .Topic.Title }}</h2>
+            <h5 class="noPad">{{ .Topic.CreatedBy }}</h5>
+            <p>{{ .Topic.Content }}</p>
         </div>
+        {{ range .Topic.Comments }}
         <div class="comment">
-            <h5 class="noPad">$USERNAME</h5>
-            <p>
-                $COMMENT
-            </p>
+            <h5 class="noPad">{{ .CreatedBy }}</h5>
+            <p>{{ .Text }}</p> <!-- html escaped! -->
         </div>
+        {{ end }}
         <div id="postComment" class="postComment">
             <form action="JavaScript:postComment()">
                 Comment:</br>

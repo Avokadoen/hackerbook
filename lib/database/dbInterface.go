@@ -30,6 +30,8 @@ type Db interface {
 	GetCookie(cookie CookieData, entry *CookieData)
 	DeleteCookie(id bson.ObjectId)
 	GetUsername(id bson.ObjectId) string
+	GetCategories(categories interface{})
+	GetCategory(categoryName string, category interface{})
 }
 
 type DbState struct {
@@ -40,11 +42,7 @@ type DbState struct {
 	Session  *mgo.Session
 }
 
-type Category struct {
-	Id    bson.ObjectId `bson:"_id,omitempty" valid:"-"`
-	Name  string        `json:"name" valid:"-"`
-	Posts int           `json:"posts" valid:"-"`
-}
+
 
 type SignUpUser struct {
 	Id       bson.ObjectId `bson:"_id,omitempty" valid:"-, optional"`
@@ -59,8 +57,8 @@ type LoginUser struct {
 }
 
 type CookieData struct {
-	Id bson.ObjectId 		`json:"token" valid:"-, required"`
-	Token string	`json:"token" valid:"alphanum, required"`
+	Id    bson.ObjectId `json:"token" valid:"-, required"`
+	Token string        `json:"token" valid:"alphanum, required"`
 }
 
 func (db *DbState) InitState() {
@@ -120,7 +118,7 @@ func (db *DbState) AuthenticateUser(user LoginUser) bson.ObjectId {
 	var storedUser SignUpUser
 	err := collection.Find(bson.M{"username": user.Username, "password": user.Password}).One(&storedUser)
 	if err != nil {
-		log.Printf("%v+", err)
+		log.Printf("%+v", err)
 		return bson.ObjectId(0)
 	}
 	return storedUser.Id
@@ -131,7 +129,7 @@ func (db *DbState) AuthenticateUser(user LoginUser) bson.ObjectId {
 	var dbCookieData CookieData
 	err := collection.Find(bson.M{"id":cookie.Id, "token":cookie.Token}).One(&dbCookieData)
 	if err != nil {
-		log.Printf("%v+", err)
+		log.Printf("%+v", err)
 		return bson.ObjectId(0)
 	}
 
@@ -161,12 +159,12 @@ func (db *DbState) IsExistingUser(user SignUpUser) (*string, error) {
 	return rtrString, nil
 }
 
-func (db *DbState) GetCookie(cookie CookieData, entry *CookieData){
+func (db *DbState) GetCookie(cookie CookieData, entry *CookieData) {
 
 	collection := db.GetCollection(TableCookie)
-	err := collection.Find(bson.M{"id":bson.ObjectIdHex(cookie.Id.Hex())}).One(&entry)
+	err := collection.Find(bson.M{"id": bson.ObjectIdHex(cookie.Id.Hex())}).One(&entry)
 	if err != nil {
-		fmt.Printf("when retrieving cookie error: %v+", err)
+		fmt.Printf("when retrieving cookie error: %+v", err)
 	}
 
 }
@@ -174,9 +172,9 @@ func (db *DbState) GetCookie(cookie CookieData, entry *CookieData){
 func (db *DbState) DeleteCookie(id bson.ObjectId) {
 	collection := db.GetCollection(TableCookie)
 	// TODO: log?
-	_, err := collection.RemoveAll(bson.M{"id":bson.ObjectIdHex(id.Hex())})
+	_, err := collection.RemoveAll(bson.M{"id": bson.ObjectIdHex(id.Hex())})
 	if err != nil {
-		fmt.Printf("when deleting cookies error: %v+", err)
+		fmt.Printf("when deleting cookies error: %+v", err)
 	}
 }
 
@@ -185,7 +183,16 @@ func (db *DbState) GetUsername(id bson.ObjectId) string {
 	collection := db.GetCollection(TableUsers)
 	err := collection.FindId(bson.ObjectIdHex(id.Hex())).One(&user)
 	if err != nil {
-		fmt.Printf("when retrieving username error: %v+, id: %v+", err, bson.ObjectIdHex(id.Hex()))
+		fmt.Printf("when retrieving username error: %+v, id: %+v", err, bson.ObjectIdHex(id.Hex()))
 	}
 	return user.Username
+}
+
+func (db *DbState) GetCategories(categories interface{}) {
+	db.ValidateSession()
+	db.GetCollection(TableCategory).Find(nil).All(categories)
+}
+func (db *DbState) GetCategory(categoryName string, category interface{}) {
+	db.ValidateSession()
+	db.GetCollection(TableCategory).Find(bson.M{"name": categoryName}).One(category)
 }
