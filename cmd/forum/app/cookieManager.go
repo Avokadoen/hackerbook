@@ -22,10 +22,10 @@ type CookieManager interface {
 	Init()
 	FetchCookie(r *http.Request) database.CookieData
 	CreateCookie(w http.ResponseWriter, m bson.ObjectId, urlString string) (string)
-	DeleteCookie(w http.ResponseWriter, urlString string) (string)
+	DeleteClientCookie(w http.ResponseWriter, urlString string) (string)
+	DeleteDBCookie(clientCookie database.CookieData) (error)
 	DecodeDBCookieData(data database.CookieData) database.CookieData
-
-	//AuthenticateCookie()
+	AuthenticateCookie(w http.ResponseWriter, Server *Server, userCookie database.CookieData) (error)
 }
 
 // TODO: we need to recreate securecookie if it is nil
@@ -81,11 +81,10 @@ func (SCManager *SCManager) CreateCookie(w http.ResponseWriter, m bson.ObjectId,
 	return ""
 }
 
-func (SCManager *SCManager) DeleteCookie(w http.ResponseWriter, urlString string) (string) {
+func (SCManager *SCManager) DeleteClientCookie(w http.ResponseWriter, urlString string) (error) {
 	u, err := url.Parse(urlString)
 	if err != nil {
-		fmt.Printf("error at url parse error: %v+", err)
-		return ""
+		return fmt.Errorf("error at url parse error: %v+", err)
 	}
 	cookieData := database.CookieData {
 		Id:bson.ObjectId(0),
@@ -102,10 +101,25 @@ func (SCManager *SCManager) DeleteCookie(w http.ResponseWriter, urlString string
 		fmt.Println("delete cookie")
 
 		http.SetCookie(w, &tokenCookie)
-		return encoded
+		return nil
 	}
-	fmt.Println("failed to delete cookie")
-	return ""
+	return fmt.Errorf("failed to delete client cookie")
+}
+
+func (SCManager *SCManager) DeleteDBCookie(clientCookie database.CookieData, Server *Server) (error) {
+	if len(clientCookie.Token) <= 0 {
+		return fmt.Errorf("invalid token in cookie")
+	}
+	encodedDbCookie := new(database.CookieData)
+
+	Server.Database.GetCookie(clientCookie, encodedDbCookie)
+	dbData := SCManager.DecodeDBCookieData(*encodedDbCookie)
+
+	if dbData != clientCookie {
+		return fmt.Errorf("usercookie did not match db")
+	}
+	Server.Database.DeleteCookie(dbData.Id)
+	return nil
 }
 
 func (SCManager *SCManager) DecodeDBCookieData(data database.CookieData) database.CookieData{
@@ -117,4 +131,20 @@ func (SCManager *SCManager) DecodeDBCookieData(data database.CookieData) databas
 		return database.CookieData{}
 	}
 	return decodeData
+}
+
+
+func (SCManager *SCManager) AuthenticateCookie(w http.ResponseWriter, Server *Server, clientCookie database.CookieData) (error) {
+	if len(clientCookie.Token) <= 0 {
+		return fmt.Errorf("invalid token in cookie")
+	}
+	encodedDbCookie := new(database.CookieData)
+
+	Server.Database.GetCookie(clientCookie, encodedDbCookie)
+	dbData := SCManager.DecodeDBCookieData(*encodedDbCookie)
+
+	if dbData != clientCookie {
+		return fmt.Errorf("usercookie did not match db")
+	}
+	return nil
 }

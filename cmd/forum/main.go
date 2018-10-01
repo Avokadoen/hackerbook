@@ -132,44 +132,21 @@ func SignOutHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	cookie := SecureCookie.FetchCookie(r)
-	if len(cookie.Token) <= 0 {
+	SecureCookie.DeleteClientCookie(w, r.URL.Path) // TODO: if err
+	err := SecureCookie.DeleteDBCookie(cookie, Server)
+	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte("failed login"))
-		return
 	}
-	encodedDbCookie := new(database.CookieData)
-
-	Server.Database.GetCookie(cookie, encodedDbCookie)
-	dbData := SecureCookie.DecodeDBCookieData(*encodedDbCookie)
-
-	SecureCookie.DeleteCookie(w, r.URL.Path)
-	if dbData != cookie {
-		w.WriteHeader(http.StatusBadRequest)
-		//w.Write([]byte("failed to validate cookie"))
-		return
-	}
-	Server.Database.DeleteCookie(dbData.Id)
-
-
 }
 
 func CookieLoginHandler(w http.ResponseWriter, r *http.Request)(){
 
 	defer r.Body.Close()
 	cookie := SecureCookie.FetchCookie(r)
-	if len(cookie.Token) <= 0 {
+	err := SecureCookie.AuthenticateCookie(w, Server, cookie)
+	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte("failed login"))
-		return
-	}
-	encodedDbCookie := new(database.CookieData)
-
-	Server.Database.GetCookie(cookie, encodedDbCookie)
-	dbData := SecureCookie.DecodeDBCookieData(*encodedDbCookie)
-
-	if dbData != cookie {
-		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte("failed to validate cookie"))
+		fmt.Printf("unable to validate cookie, err: %v", err)
 		return
 	}
 	username := Server.Database.GetUsername(cookie.Id)
@@ -197,7 +174,6 @@ func ManualLoginHandler(w http.ResponseWriter, r *http.Request) {
 	if valid, err := validator.ValidateStruct(rawUserData); !valid {
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
-			fmt.Fprintln(w, "unable to validate user")
 			fmt.Printf("unable to validate user: %v", err)
 		}
 		fmt.Fprint(w, "invalid user")
