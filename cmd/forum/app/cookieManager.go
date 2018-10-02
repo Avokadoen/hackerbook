@@ -20,12 +20,12 @@ type SCManager struct {
 
 type CookieManager interface {
 	Init()
-	FetchCookie(r *http.Request) database.CookieData
+	FetchCookie(r *http.Request) (database.CookieData, error)
 	CreateCookie(w http.ResponseWriter, m bson.ObjectId, urlString string) (string)
 	DeleteClientCookie(w http.ResponseWriter, urlString string) (string)
 	DeleteDBCookie(clientCookie database.CookieData) (error)
 	DecodeDBCookieData(data database.CookieData) database.CookieData
-	AuthenticateCookie(w http.ResponseWriter, Server *Server, userCookie database.CookieData) (error)
+	AuthenticateCookie(w http.ResponseWriter, Server *Server, clientCookie database.CookieData) (error)
 }
 
 // TODO: we need to recreate securecookie if it is nil
