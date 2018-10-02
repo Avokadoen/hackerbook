@@ -1,20 +1,25 @@
 var PW = new String();
-var sessionID = "";
 
 function generateCaptcha(){
     var req = new XMLHttpRequest();
 
-    if(sessionID === ""){
-        req.open("GET", "/postSignUpSessionID", true);
-        req.setRequestHeader('Content-Type', 'application/json');
-        req.send();
+    req.open("GET", window.location.origin + "/createcaptcha", true);
+    req.responseType = "blob";
+    req.setRequestHeader('Content-Type', 'image/png');
+    req.send();
 
 
-        req.onload = function() {
-            var image = new Image();
-            image.src = 'data:image/png;base64,' + this.responseText;
-            $('#captchaIMG').attr("src", image.src);
-        }
+    req.onload = function() {
+        //var b64 = btoa(this.responseText);
+        //var outputImg =
+        var kekimg = this.response.toDataURL();
+        var reader = new FileReader();
+        document.getElementById("captchaIMG").src = 'data:image/png;base64,' + btoa(kekimg);
+        //document.getElementById("captchaIMG").src = /data:image\/png;base64,/.concat(this.responseText);
+        //$('#captchaIMG').attr('src', 'data:image/png;base64,' + this.responseText);
+        //document.getElementById("captchaIMG").src(image.src);
+        //document.body.appendChild(image);
+
     }
 }
 
