@@ -1,4 +1,22 @@
 var PW = new String();
+var sessionID = "";
+
+function generateCaptcha(){
+    var req = new XMLHttpRequest();
+
+    if(sessionID === ""){
+        req.open("GET", "/postSignUpSessionID", true);
+        req.setRequestHeader('Content-Type', 'application/json');
+        req.send();
+
+
+        req.onload = function() {
+            var image = new Image();
+            image.src = 'data:image/png;base64,' + this.responseText;
+            $('#captchaIMG').attr("src", image.src);
+        }
+    }
+}
 
 function handleSignup(event){
     var answer = "Something went wrong";
@@ -10,7 +28,9 @@ function handleSignup(event){
         req.send(JSON.stringify({
             email:      event.email.value,
             username:   event.username.value,
-            password:   event.password.value
+            password:   event.password.value,
+            sessionID:  sessionID,
+            captcha:    event.captcha.value
         }));
 
 
