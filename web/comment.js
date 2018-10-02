@@ -8,8 +8,7 @@ function postComment(event){
         req.setRequestHeader('Content-Type', 'application/json');
         req.send(JSON.stringify({
             username: loggedInUser, //Fetch username somehow
-            comment: event.commentInput.value
-
+            text: event.commentInput.value
         }));
 
 
