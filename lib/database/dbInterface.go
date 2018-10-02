@@ -19,6 +19,9 @@ const (
 	TableUsers    = "users"
 	TableTopic    = "topic"
 	TableCookie   = "cookie"
+	//TableTopic = "topic"
+	TableComment    = "comment"
+	TableEmailToken = "eToken"
 )
 
 type Db interface {
@@ -52,6 +55,11 @@ type SignUpUser struct {
 	Password string        `json:"password" valid:"alphanum, required"`
 }
 
+type EmailToken struct { // Unverified emails
+	Username string `json:"username" valid:"alphanum, required"`
+	Token    string `json:"token" valid:"alphanum, required"`
+}
+
 type LoginUser struct {
 	Username string `json:"username" valid:"alphanum, required"`
 	Password string `json:"password" valid:"alphanum, required"`
@@ -60,6 +68,20 @@ type LoginUser struct {
 type CookieData struct {
 	Id    bson.ObjectId `json:"token" valid:"-, required"`
 	Token string        `json:"token" valid:"alphanum, required"`
+}
+
+type Topic struct {
+	CategoryID        string `bson:"_id,omitempty" valid:"-, optional"`
+	Username          string `json:"username" valid:"alphanum, required"`
+	TopicName         string `json:"username" valid:"alphanum, required"`
+	Text              string `json:"username" valid:"alphanum, required"`
+	commentCollection []Comment
+}
+
+type Comment struct {
+	CommentID bson.ObjectId `bson:"_id,omitempty" valid:"-, optional"`
+	Username  string        `json:"username" valid:"alphanum, required"`
+	Text      string        `json:"username" valid:"alphanum, required"`
 }
 
 func (db *DbState) InitState() {

@@ -17,6 +17,7 @@ function tryCookieLogin(){
             loginClone = $("#login").clone();
             $('#login').html("You are logged in as " + loggedInUser  + "<input type=\"button\" onClick=\"handleSignout()\" value=\"Signout\">");
         }
+        $("div.login").show();
     }
 }
 
@@ -44,8 +45,16 @@ function handleLogin(event){
 }
 
 function handleSignout(){
-    $('#login').html(loginClone);
-    document.getElementById("loginMessage").innerHTML = "Signed out successfully";
+    var req = new XMLHttpRequest();
+    req.open("POST", window.location.origin + "/signout", true);
+    req.setRequestHeader('Content-Type', 'application/json');
+    req.send();
+
+    req.onload = function(){
+        $('#login').html(loginClone);
+        $("div.login").show();
+        document.getElementById("loginMessage").innerHTML = "Signed out successfully";
+    }
 }
 
 function isLoggedIn(){
