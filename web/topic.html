@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <link rel="stylesheet" href="/web/style.css">
-    <title>{{ .Category }} - {{ .Topic.Title }}</title>
+    <title>{{ html .Name }} - {{ html .Topic.Title }}</title>
     <script src="/web/jquery-3.3.1.js"></script>
     <script src="/web/login.js"></script>
     <script src="/web/comment.js"></script>
@@ -28,19 +28,20 @@
     <p id="loginMessage"></p>
     <h1 class="center"><a href="/">HackerBook v2A.h</a></h1>
     <h1 class="center">
-        {{ .Category }}
+        {{ html .Name }}
     </h1>
     <div class="center">
-        <div class="topic">
+        <div class="topic" id={{ urlquery .Topic.Title }}>
             <h2 class="noPad">{{ html .Topic.Title }}</h2>
-            <h5 class="noPad">{{ .Topic.CreatedBy }}</h5>
-            <p>{{ .Topic.Content }}</p>
+            <h5 class="noPad">{{ html .Topic.CreatedBy }}</h5>
+            <p>{{ html .Topic.Content }}</p>
         </div>
         {{ range .Topic.Comments }}
-        <div class="comment">
-            <h5 class="noPad">{{ .CreatedBy }}</h5>
-            <p>{{ .Text }}</p> <!-- html escaped! -->
+        <div class="comment" id={{ urlquery .Text }}>
+            <h5 class="noPad">{{ html .CreatedBy }}</h5>
+            <p>{{ html .Text }}</p>
         </div>
+        {{ else }}
         {{ end }}
         <div id="postComment" class="postComment">
             <form action="JavaScript:postComment()">
@@ -51,6 +52,5 @@
             <p id="commentMessage"></p>
         </div>
     </div>
-
 </body>
 </html>

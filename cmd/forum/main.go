@@ -28,7 +28,7 @@ func init() {
 }
 
 var Server *app.Server
-var SecureCookie app.SCManager// TODO: make sure there always is a securecookie
+var SecureCookie app.SCManager // TODO: make sure there always is a securecookie
 func main() {
 	validator.SetFieldsRequiredByDefault(true)
 
@@ -56,7 +56,11 @@ func main() {
 	// PAGE HANDLES
 	router.HandleFunc("/", GenerateHomePage)
 	router.HandleFunc("/r/{category}", GenerateCategoryPage)
-	router.HandleFunc("/r/{category}/{topicID}", GenerateTopicPage)
+	router.HandleFunc("/r/{category}/newtopic", CreateNewTopic).Methods(http.MethodPost)
+
+	router.HandleFunc("/r/{category}/{topicID}", GenerateTopicPage).Methods(http.MethodGet)
+
+	router.HandleFunc("/r/{category}/{topicID}/comment", CreateNewComment).Methods(http.MethodPost)
 
 	fmt.Printf("\nListening through port %v...\n", Server.Port)
 	http.ListenAndServe(":"+Server.Port, router)
@@ -129,7 +133,7 @@ func SignUpHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	userStatus, err := Server.Database.IsExistingUser(user)
 	if err != nil {
-		log.Printf("failed to check user in sign up. error: %v+", err)
+		log.Printf("failed to check user in sign up. error: %+v", err)
 	} else if userStatus != nil {
 		if strings.Contains(*userStatus, "username") {
 			w.Write([]byte("username already exist"))
@@ -142,7 +146,7 @@ func SignUpHandler(w http.ResponseWriter, r *http.Request) {
 
 	Server.Database.InsertToCollection(database.TableUsers, user)
 	fmt.Println("user inserted in database!")
-	EmailVerification(w,r,user)
+	EmailVerification(w, r, user)
 }
 
 func SignOutHandler(w http.ResponseWriter, r *http.Request) {
@@ -152,15 +156,21 @@ func SignOutHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	cookie := SecureCookie.FetchCookie(r)
-	SecureCookie.DeleteClientCookie(w, r.URL.Path) // TODO: if err
-	err := SecureCookie.DeleteDBCookie(cookie, Server)
+	err := SecureCookie.DeleteClientCookie(w, r.URL.Path)
+	if err != nil {
+		fmt.Printf("main failed to delete client cookie, err: %v", err)
+		w.WriteHeader(http.StatusBadRequest)
+	}
+	err = SecureCookie.AuthenticateCookie(w, Server, cookie)
 	if err != nil {
 		fmt.Printf("main failed to delete cookie, err: %v", err)
 		w.WriteHeader(http.StatusBadRequest)
 	}
+	Server.Database.DeleteCookie(cookie.Id)
+
 }
 
-func CookieLoginHandler(w http.ResponseWriter, r *http.Request)(){
+func CookieLoginHandler(w http.ResponseWriter, r *http.Request) {
 
 	defer r.Body.Close()
 	cookie := SecureCookie.FetchCookie(r)
@@ -232,11 +242,13 @@ func ManualLoginHandler(w http.ResponseWriter, r *http.Request) {
 
 }
 
+
 func PostCommentHandler (w http.ResponseWriter, r *http.Request){
 	// TODO Get topic id
 	err := Server.Database.ValidateSession()
 	if err != nil{
 		fmt.Printf("unable to validate session, err: %v", err)
+		return
 	}
 	// TODO: should use unique postComment struct
 	var commentRaw database.Comment
@@ -265,6 +277,7 @@ func PostCommentHandler (w http.ResponseWriter, r *http.Request){
 		}
 		fmt.Fprint(w, "invalid comment")
 		return
+
 	}
 
 	Server.Database.InsertToCollection(database.TableComment, comment)

@@ -9,7 +9,6 @@
     <script src="/web/login.js"></script>
 </head>
 <body>
-    <script>tryCookieLogin();</script>
     <div id="login" class ="login">
         <form action="JavaScript:handleLogin()">
             Username:
@@ -25,13 +24,9 @@
     </div>
     <p id="loginMessage"></p>
     <h1 class="center"><a href="/">HackerBook v2A.h</a></h1>
-    <div class="center">
-        <ul>
-            {{range .Categories}}
-                <h2 class="noPad"><a href="/r/{{ html .Name }}">{{ html .Name }}</h2>
-                <h5 class="noPad">{{ len .Topics }} Topics</h5>
-            {{end}}
-        </ul>
-    </div>
+    <br/>
+    <br/>
+    <br/>
+    <h2 class="center">404 - There's nothing here 😮</h2>
 </body>
 </html>

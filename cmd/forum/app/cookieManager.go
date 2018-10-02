@@ -39,12 +39,12 @@ func (SCManager *SCManager) FetchCookie(r *http.Request) database.CookieData{
 
 	cookie, err := r.Cookie(CookieName)
 	if err != nil {
-		fmt.Printf("when requesting cookie error: %v+", err)
+		fmt.Printf("when requesting cookie error: %+v", err)
 		return cookieData
 	}
 	err = SCManager.secureCoIns.Decode(CookieName, cookie.Value, &cookieData)
 	if err != nil {
-		fmt.Printf("when decoding cookie error: %v+", err)
+		fmt.Printf("when decoding cookie error: %+v", err)
 	}
 
 	return cookieData
@@ -57,7 +57,7 @@ func (SCManager *SCManager) CreateCookie(w http.ResponseWriter, m bson.ObjectId,
 
 	u, err := url.Parse(urlString)
 	if err != nil {
-		fmt.Printf("error at url parse error: %v+", err)
+		fmt.Printf("error at url parse error: %+v", err)
 		return ""
 	}
 	cookieData := database.CookieData {
@@ -84,7 +84,7 @@ func (SCManager *SCManager) CreateCookie(w http.ResponseWriter, m bson.ObjectId,
 func (SCManager *SCManager) DeleteClientCookie(w http.ResponseWriter, urlString string) (error) {
 	u, err := url.Parse(urlString)
 	if err != nil {
-		return fmt.Errorf("error at url parse error: %v+", err)
+		return fmt.Errorf("error at url parse error: %+v", err)
 	}
 	cookieData := database.CookieData {
 		Id:bson.ObjectId(0),
@@ -127,7 +127,7 @@ func (SCManager *SCManager) DecodeDBCookieData(data database.CookieData) databas
 	decodeData := database.CookieData{}
 	err := SCManager.secureCoIns.Decode(CookieName, data.Token, &decodeData)
 	if err != nil {
-		fmt.Printf("when decoding dbCookie error: %v+", err)
+		fmt.Printf("when decoding dbCookie error: %+v", err)
 		return database.CookieData{}
 	}
 	return decodeData
