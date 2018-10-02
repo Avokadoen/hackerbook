@@ -7,6 +7,7 @@
     <link rel="shortcut icon" type="image/png" href="/web/favicon.png" />
     <script src="/web/jquery-3.3.1.js"></script>
     <script src="/web/login.js"></script>
+    <script src="/web/topic.js"></script>
 </head>
 <body>
     <script>tryCookieLogin();</script>
@@ -27,6 +28,17 @@
     <h1 class="center"><a href="/">HackerBook v2A.h</a></h1>
     <h2 class="center">{{ html .Name }}</h2>
     <div class="center">
+        <div id="postNewTopic" class="postNewTopic">
+            <form action="JavaScript:postTopic()">
+                Title:</br>
+                <input id ="topicTitle" type="text" name="title" value="">
+                </br>Post:</br>
+                <textarea id="topicText" name="topicInput" cols="80" rows="10"></textarea>
+                <input type="button" onClick="postTopic(this.form)" value="Post Topic">
+            </form>
+            <p id="postedTopicMessage"></p>
+        </div>
+        <input type="button" onClick="postTopicVisible()" value="Create new topic">
         <ul>
             {{range .Topics}}
             <h2 class="noPad"><a href="/r/{{ $.Name }}/{{ .Id.Hex }}#{{ urlquery .Title }}">{{ html .Title }}</h2>
