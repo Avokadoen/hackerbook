@@ -31,6 +31,10 @@ div.login{
     display: none;
 }
 
+div.postNewTopic{
+    display: none;
+}
+
 div.center {
     margin: auto;
     width: 50%;
