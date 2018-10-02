@@ -98,12 +98,14 @@ func SignUpHandler(w http.ResponseWriter, r *http.Request) {
 	rBody, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		w.WriteHeader(http.StatusForbidden)
+		return
 	}
 	err = json.Unmarshal(rBody, &rawUserData)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		fmt.Fprintln(w, "unable to sign up")
 		fmt.Println(string(rBody))
+		return
 	}
 
 	if valid, err := validator.ValidateStruct(rawUserData); !valid {
@@ -134,6 +136,7 @@ func SignUpHandler(w http.ResponseWriter, r *http.Request) {
 	userStatus, err := Server.Database.IsExistingUser(user)
 	if err != nil {
 		log.Printf("failed to check user in sign up. error: %+v", err)
+		return
 	} else if userStatus != nil {
 		if strings.Contains(*userStatus, "username") {
 			w.Write([]byte("username already exist"))
@@ -159,16 +162,19 @@ func SignOutHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		fmt.Printf("main fetch cookie, err: %v", err)
 		w.WriteHeader(http.StatusBadRequest)
+		return
 	}
 	err = SecureCookie.DeleteClientCookie(w, r.URL.Path)
 	if err != nil {
 		fmt.Printf("main failed to delete client cookie, err: %v", err)
 		w.WriteHeader(http.StatusBadRequest)
+		return
 	}
 	err = SecureCookie.AuthenticateCookie(w, Server, cookie)
 	if err != nil {
 		fmt.Printf("main failed to delete cookie, err: %v", err)
 		w.WriteHeader(http.StatusBadRequest)
+		return
 	}
 	Server.Database.DeleteCookie(cookie.Id)
 
@@ -204,11 +210,13 @@ func ManualLoginHandler(w http.ResponseWriter, r *http.Request) {
 	rBody, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		w.WriteHeader(http.StatusForbidden)
+		return
 	}
 	err = json.Unmarshal(rBody, &rawUserData)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		fmt.Printf("failed to unmarshal: %v", err)
+		return
 	}
 
 	if valid, err := validator.ValidateStruct(rawUserData); !valid {
@@ -265,16 +273,19 @@ func PostCommentHandler (w http.ResponseWriter, r *http.Request){
 	if err != nil {
 		w.WriteHeader(http.StatusForbidden)
 		fmt.Printf("unable to read, err: %v", err)
+		return
 	}
 	err = json.Unmarshal(rBody, &commentRaw)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		fmt.Printf("unable to unmarshal, err: %v", err)
+		return
 	}
 	cookie, err := SecureCookie.FetchCookie(r)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		fmt.Printf("unable to fetch cookie: %v", err)
+		return
 	}
 	username := Server.Database.GetUsername(cookie.Id)
 
