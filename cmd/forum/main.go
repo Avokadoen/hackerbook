@@ -155,8 +155,12 @@ func SignOutHandler(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
-	cookie := SecureCookie.FetchCookie(r)
-	err := SecureCookie.DeleteClientCookie(w, r.URL.Path)
+	cookie, err := SecureCookie.FetchCookie(r)
+	if err != nil {
+		fmt.Printf("main fetch cookie, err: %v", err)
+		w.WriteHeader(http.StatusBadRequest)
+	}
+	err = SecureCookie.DeleteClientCookie(w, r.URL.Path)
 	if err != nil {
 		fmt.Printf("main failed to delete client cookie, err: %v", err)
 		w.WriteHeader(http.StatusBadRequest)
@@ -173,8 +177,13 @@ func SignOutHandler(w http.ResponseWriter, r *http.Request) {
 func CookieLoginHandler(w http.ResponseWriter, r *http.Request) {
 
 	defer r.Body.Close()
-	cookie := SecureCookie.FetchCookie(r)
-	err := SecureCookie.AuthenticateCookie(w, Server, cookie)
+	cookie, err := SecureCookie.FetchCookie(r)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		fmt.Printf("unable to fetch cookie, err: %v", err)
+		return
+	}
+	err = SecureCookie.AuthenticateCookie(w, Server, cookie)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		fmt.Printf("unable to validate cookie, err: %v", err)
@@ -262,7 +271,11 @@ func PostCommentHandler (w http.ResponseWriter, r *http.Request){
 		w.WriteHeader(http.StatusInternalServerError)
 		fmt.Printf("unable to unmarshal, err: %v", err)
 	}
-	cookie := SecureCookie.FetchCookie(r)
+	cookie, err := SecureCookie.FetchCookie(r)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		fmt.Printf("unable to fetch cookie: %v", err)
+	}
 	username := Server.Database.GetUsername(cookie.Id)
 
 	comment := database.Comment{
