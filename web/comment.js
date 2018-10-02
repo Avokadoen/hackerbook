@@ -3,7 +3,8 @@ function postComment(event){
     var req = new XMLHttpRequest();
 
     if(isLoggedIn()){
-        req.open("POST", window.location.origin + "/postcomment", true);
+        var url = [location.protocol, '//', location.host, location.pathname+"/comment"].join('');
+        req.open("POST", url, true);
         req.setRequestHeader('Content-Type', 'application/json');
         req.send(JSON.stringify({
             username: loggedInUser, //Fetch username somehow

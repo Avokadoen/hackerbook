@@ -8,26 +8,29 @@ import (
 	"encoding/hex"
 	"fmt"
 
-	"github.com/globalsign/mgo/bson"
-	"github.com/gorilla/securecookie"
-	"gitlab.com/avokadoen/softsecoblig2/lib/database"
 	"io"
 	"net/http"
 	"net/url"
 	"time"
+
+	"github.com/globalsign/mgo/bson"
+	"github.com/gorilla/securecookie"
+	"gitlab.com/avokadoen/softsecoblig2/lib/database"
 )
 
 /* sources:
-	url parse: https://stackoverflow.com/a/49258338
-	securing cookies: https://www.calhoun.io/securing-cookies-in-go/
+url parse: https://stackoverflow.com/a/49258338
+securing cookies: https://www.calhoun.io/securing-cookies-in-go/
 */
 type Server struct {
-	Port     string
-	Database database.Db
+	Port        string
+	Database    database.Db
+	StaticPages map[int][]byte
 }
 
 const CookieName = "HackerBook"
 const CookieExpiration = time.Hour
+
 var secureCookieInstance = &securecookie.SecureCookie{}
 
 func ConvertPlainPassword(rawUsername, rawPassword string) string {
@@ -75,11 +78,11 @@ func Decrypt(data []byte, passphrase string) []byte {
 }
 
 // TODO: we need to recreate securecookie if it is nil
-func InitSecureCookie(){
+func InitSecureCookie() {
 	secureCookieInstance = securecookie.New(securecookie.GenerateRandomKey(32), securecookie.GenerateRandomKey(32))
 }
 
-func FetchCookie(r *http.Request) database.CookieData{
+func FetchCookie(r *http.Request) database.CookieData {
 
 	cookieData := database.CookieData{}
 
@@ -96,7 +99,7 @@ func FetchCookie(r *http.Request) database.CookieData{
 	return cookieData
 }
 
-func CreateCookie(w http.ResponseWriter, m bson.ObjectId, urlString string) (string) {
+func CreateCookie(w http.ResponseWriter, m bson.ObjectId, urlString string) string {
 	timeCreated := time.Now().UnixNano()
 	token := CreateHash(string(timeCreated))
 	userID := m
@@ -106,8 +109,8 @@ func CreateCookie(w http.ResponseWriter, m bson.ObjectId, urlString string) (str
 		fmt.Printf("error at url parse error: %v+", err)
 		return ""
 	}
-	cookieData := database.CookieData {
-		Id: userID,
+	cookieData := database.CookieData{
+		Id:    userID,
 		Token: token,
 	}
 	if encoded, err := secureCookieInstance.Encode(CookieName, cookieData); err == nil {
@@ -127,7 +130,7 @@ func CreateCookie(w http.ResponseWriter, m bson.ObjectId, urlString string) (str
 	return ""
 }
 
-func DecodeDBCookieData(data database.CookieData) database.CookieData{
+func DecodeDBCookieData(data database.CookieData) database.CookieData {
 
 	decodeData := database.CookieData{}
 	err := secureCookieInstance.Decode(CookieName, data.Token, &decodeData)

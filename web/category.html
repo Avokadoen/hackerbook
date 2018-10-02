@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <link rel="stylesheet" href="/web/style.css">
-    <title>HackerBook - {{ .Name }}</title>
+    <title>HackerBook - {{ html .Name }}</title>
     <link rel="shortcut icon" type="image/png" href="/web/favicon.png" />
     <script src="/web/jquery-3.3.1.js"></script>
     <script src="/web/login.js"></script>
@@ -24,12 +24,12 @@
     </div>
     <p id="loginMessage"></p>
     <h1 class="center">HackerBook v2A.h</h1>
-    <h2 class="center">{{ .Name }}</h2>
+    <h2 class="center">{{ html .Name }}</h2>
     <div class="center">
         <ul>
             {{range .Topics}}
-            <h2 class="noPad"><a href="/r/{{ $.Name }}/{{ .Id.Hex }}">{{ html .Title }}</h2>
-            <h5 class="noPad">{{ .CreatedBy }}</h5>
+            <h2 class="noPad"><a href="/r/{{ $.Name }}/{{ .Id.Hex }}#{{ urlquery .Title }}">{{ html .Title }}</h2>
+            <h5 class="noPad">{{ .CreatedBy.Hex }}</h5>
             <h5 class="noPad">{{ len .Comments }}</h5>
             {{end}}
         </ul>

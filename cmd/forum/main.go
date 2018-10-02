@@ -53,7 +53,11 @@ func main() {
 	// PAGE HANDLES
 	router.HandleFunc("/", GenerateHomePage)
 	router.HandleFunc("/r/{category}", GenerateCategoryPage)
-	router.HandleFunc("/r/{category}/{topicID}", GenerateTopicPage)
+	router.HandleFunc("/r/{category}/newtopic", CreateNewTopic).Methods(http.MethodPost)
+
+	router.HandleFunc("/r/{category}/{topicID}", GenerateTopicPage).Methods(http.MethodGet)
+
+	router.HandleFunc("/r/{category}/{topicID}/comment", CreateNewComment).Methods(http.MethodPost)
 
 	fmt.Printf("\nListening through port %v...\n", Server.Port)
 	http.ListenAndServe(":"+Server.Port, router)

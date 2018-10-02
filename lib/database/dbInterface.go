@@ -1,6 +1,7 @@
 package database
 
 import (
+	"encoding/json"
 	"fmt"
 	"log"
 	"os"
@@ -16,6 +17,7 @@ const (
 	//DATABASE TABLES
 	TableCategory = "category"
 	TableUsers    = "users"
+	TableTopic    = "topic"
 	TableCookie   = "cookie"
 )
 
@@ -32,6 +34,7 @@ type Db interface {
 	GetUsername(id bson.ObjectId) string
 	GetCategories(categories interface{})
 	GetCategory(categoryName string, category interface{})
+	GetTopic(categoryName string, topicID string, topic interface{})
 }
 
 type DbState struct {
@@ -102,17 +105,17 @@ func (db *DbState) ValidateSession() error {
 	return nil
 }
 
-func (db *DbState) GetCollection(collectionName string) *mgo.Collection {
+func (db *DbState) getCollection(collectionName string) *mgo.Collection {
 	return db.Session.DB(db.DbName).C(strings.ToLower(collectionName))
 }
 
 func (db *DbState) InsertToCollection(collectionName string, data interface{}) error {
-	collection := db.GetCollection(collectionName)
-	return collection.Insert(data)
+	collection := db.getCollection(collectionName)
+	return collection.Insert(data) //TODO ensureIndex
 }
 
 func (db *DbState) AuthenticateUser(user LoginUser) bson.ObjectId {
-	collection := db.GetCollection(TableUsers)
+	collection := db.getCollection(TableUsers)
 	var storedUser SignUpUser
 	err := collection.Find(bson.M{"username": user.Username, "password": user.Password}).One(&storedUser)
 	if err != nil {
@@ -123,7 +126,7 @@ func (db *DbState) AuthenticateUser(user LoginUser) bson.ObjectId {
 }
 
 /*func (db *DbState) AuthenticateUserCookie(cookie CookieData) bson.ObjectId {
-	collection := db.GetCollection(TableCookie)
+	collection := db.getCollection(TableCookie)
 	var dbCookieData CookieData
 	err := collection.Find(bson.M{"id":cookie.Id, "token":cookie.Token}).One(&dbCookieData)
 	if err != nil {
@@ -134,7 +137,7 @@ func (db *DbState) AuthenticateUser(user LoginUser) bson.ObjectId {
 }*/
 
 func (db *DbState) IsExistingUser(user SignUpUser) (*string, error) {
-	collection := db.GetCollection(TableUsers)
+	collection := db.getCollection(TableUsers)
 	rtrString := new(string)
 	rtrNil := true
 	count, err := collection.Find(bson.M{"username": user.Username}).Count()
@@ -159,7 +162,7 @@ func (db *DbState) IsExistingUser(user SignUpUser) (*string, error) {
 
 func (db *DbState) GetCookie(cookie CookieData, entry *CookieData) {
 
-	collection := db.GetCollection(TableCookie)
+	collection := db.getCollection(TableCookie)
 	err := collection.Find(bson.M{"id": bson.ObjectIdHex(cookie.Id.Hex())}).One(&entry)
 	if err != nil {
 		fmt.Printf("when retrieving cookie error: %+v", err)
@@ -168,7 +171,7 @@ func (db *DbState) GetCookie(cookie CookieData, entry *CookieData) {
 }
 
 func (db *DbState) DeleteCookie(id bson.ObjectId) {
-	collection := db.GetCollection(TableCookie)
+	collection := db.getCollection(TableCookie)
 	// TODO: log?
 	_, err := collection.RemoveAll(bson.M{"id": bson.ObjectIdHex(id.Hex())})
 	if err != nil {
@@ -178,7 +181,7 @@ func (db *DbState) DeleteCookie(id bson.ObjectId) {
 
 func (db *DbState) GetUsername(id bson.ObjectId) string {
 	user := LoginUser{}
-	collection := db.GetCollection(TableUsers)
+	collection := db.getCollection(TableUsers)
 	err := collection.FindId(bson.ObjectIdHex(id.Hex())).One(&user)
 	if err != nil {
 		fmt.Printf("when retrieving username error: %+v, id: %+v", err, bson.ObjectIdHex(id.Hex()))
@@ -186,11 +189,73 @@ func (db *DbState) GetUsername(id bson.ObjectId) string {
 	return user.Username
 }
 
+//TODO sepparate into other file
 func (db *DbState) GetCategories(categories interface{}) {
 	db.ValidateSession()
-	db.GetCollection(TableCategory).Find(nil).All(categories)
+	db.getCollection(TableCategory).Find(nil).All(categories)
 }
 func (db *DbState) GetCategory(categoryName string, category interface{}) {
 	db.ValidateSession()
-	db.GetCollection(TableCategory).Find(bson.M{"name": categoryName}).One(category)
+
+	pipe := db.getCollection(TableCategory).Pipe(
+		[]bson.M{
+			{"$match": bson.M{"name": bson.M{"$eq": categoryName}}},
+			{
+				"$lookup": bson.M{
+					"from":         TableTopic,
+					"localField":   "topics",
+					"foreignField": "_id",
+					"as":           "topics",
+				},
+			},
+		},
+	)
+	err := pipe.One(category)
+	if err != nil {
+		fmt.Printf(err.Error())
+		return
+	}
+	fmt.Printf("\n\n%+v\n\n", category)
+}
+
+func (db *DbState) GetTopic(categoryName string, topicID string, topic interface{}) {
+	db.ValidateSession()
+
+	pipeline := []bson.M{
+		{"$unwind": "$topics"},
+		{"$match": bson.M{"name": bson.M{"$eq": categoryName}, "topics": bson.M{"$eq": bson.ObjectIdHex(topicID)}}},
+		{"$lookup": bson.M{
+			"from":         TableTopic,
+			"localField":   "topics",
+			"foreignField": "_id",
+			"as":           "topic",
+		},
+		},
+		{"$project": bson.M{"topics": 0}},
+		{"$unwind": "$topic"},
+	}
+	/*
+	   	RESULTS IN THIS KIND OF STRUCTURE
+	   {
+	   	Id:ObjectIdHex("5bb175765499851637a9379d")
+	   	Name:phishing
+	   	Topic:{
+	   		Id:ObjectIdHex("5bb177bc5499851637a9379e")
+	   		Title:Test Post Pls Ignore
+	   		Content:test ok
+	   		Comments:[]
+	   		CreatedBy:ObjectIdHex("")
+	   	}
+	   }
+	*/
+
+	b, err := json.MarshalIndent(pipeline, "", "  ")
+	if err != nil {
+		fmt.Printf("%+v\n", pipeline)
+	}
+	fmt.Print(string(b))
+
+	//The following line does not validate against category... which might not really be an issue
+	pipe := db.getCollection(TableCategory).Pipe(pipeline)
+	pipe.One(topic)
 }
