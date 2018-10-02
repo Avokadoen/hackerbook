@@ -20,12 +20,12 @@ type SCManager struct {
 
 type CookieManager interface {
 	Init()
-	FetchCookie(r *http.Request) database.CookieData
+	FetchCookie(r *http.Request) (database.CookieData, error)
 	CreateCookie(w http.ResponseWriter, m bson.ObjectId, urlString string) (string)
 	DeleteClientCookie(w http.ResponseWriter, urlString string) (string)
 	DeleteDBCookie(clientCookie database.CookieData) (error)
 	DecodeDBCookieData(data database.CookieData) database.CookieData
-	AuthenticateCookie(w http.ResponseWriter, Server *Server, userCookie database.CookieData) (error)
+	AuthenticateCookie(w http.ResponseWriter, Server *Server, clientCookie database.CookieData) (error)
 }
 
 // TODO: we need to recreate securecookie if it is nil
@@ -33,21 +33,20 @@ func (SCManager *SCManager) Init(){
 	SCManager.secureCoIns = securecookie.New(securecookie.GenerateRandomKey(32), securecookie.GenerateRandomKey(32))
 }
 
-func (SCManager *SCManager) FetchCookie(r *http.Request) database.CookieData{
+func (SCManager *SCManager) FetchCookie(r *http.Request) (database.CookieData, error) {
 
 	cookieData := database.CookieData{}
 
 	cookie, err := r.Cookie(CookieName)
 	if err != nil {
-		fmt.Printf("when requesting cookie error: %+v", err)
-		return cookieData
+		return cookieData, err
 	}
 	err = SCManager.secureCoIns.Decode(CookieName, cookie.Value, &cookieData)
 	if err != nil {
-		fmt.Printf("when decoding cookie error: %+v", err)
+		return cookieData, err
 	}
 
-	return cookieData
+	return cookieData, nil
 }
 
 func (SCManager *SCManager) CreateCookie(w http.ResponseWriter, m bson.ObjectId, urlString string) (string) {

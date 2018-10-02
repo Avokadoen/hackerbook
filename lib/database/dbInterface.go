@@ -66,7 +66,7 @@ type LoginUser struct {
 }
 
 type CookieData struct {
-	Id    bson.ObjectId `json:"token" valid:"-, required"`
+	Id    bson.ObjectId `json:"id" valid:"-, required"`
 	Token string        `json:"token" valid:"alphanum, required"`
 }
 
@@ -74,14 +74,19 @@ type Topic struct {
 	CategoryID        string `bson:"_id,omitempty" valid:"-, optional"`
 	Username          string `json:"username" valid:"alphanum, required"`
 	TopicName         string `json:"username" valid:"alphanum, required"`
-	Text              string `json:"username" valid:"alphanum, required"`
+	Text              string `json:"text" valid:"alphanum, required"`
 	commentCollection []Comment
 }
 
 type Comment struct {
 	CommentID bson.ObjectId `bson:"_id,omitempty" valid:"-, optional"`
 	Username  string        `json:"username" valid:"alphanum, required"`
-	Text      string        `json:"username" valid:"alphanum, required"`
+	Text      string        `json:"text" valid:"alphanum, required"`
+}
+
+type SignupSession struct {
+	SignupID  string        `json:"signupid" valid:"alphanum, required"`
+	Answer    string        `json:"answer" valid:"alphanum, required"`
 }
 
 func (db *DbState) InitState() {

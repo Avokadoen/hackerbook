@@ -3,11 +3,11 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/dchest/captcha"
+	"github.com/globalsign/mgo/bson"
 	"io/ioutil"
 	"net/http"
 	"os"
-
-	"github.com/globalsign/mgo/bson"
 
 	"log"
 	"strings"
@@ -48,8 +48,10 @@ func main() {
 	router.HandleFunc("/cookielogin", CookieLoginHandler).Methods(http.MethodPost)
 	router.HandleFunc("/postlogin", ManualLoginHandler).Methods(http.MethodPost).Headers("Content-Type", "application/json")
 	router.HandleFunc("/signup", SignUpHandler).Methods(http.MethodPost).Headers("Content-Type", "application/json")
+	router.HandleFunc("/createcaptcha", CreateCaptchaHandler)
 	router.HandleFunc("/postcomment", PostCommentHandler).Methods(http.MethodPost).Headers("Content-Type", "application/json")
 	router.HandleFunc("/signout", SignOutHandler).Methods(http.MethodPost).Headers("Content-Type", "application/json")
+
 	//router.HandleFunc("/signup", SignUpHandler).Methods(http.MethodGet)
 
 	// router.HandleFunc("/", fs.ServeHTTP)
@@ -98,12 +100,14 @@ func SignUpHandler(w http.ResponseWriter, r *http.Request) {
 	rBody, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		w.WriteHeader(http.StatusForbidden)
+		return
 	}
 	err = json.Unmarshal(rBody, &rawUserData)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		fmt.Fprintln(w, "unable to sign up")
 		fmt.Println(string(rBody))
+		return
 	}
 
 	if valid, err := validator.ValidateStruct(rawUserData); !valid {
@@ -134,6 +138,7 @@ func SignUpHandler(w http.ResponseWriter, r *http.Request) {
 	userStatus, err := Server.Database.IsExistingUser(user)
 	if err != nil {
 		log.Printf("failed to check user in sign up. error: %+v", err)
+		return
 	} else if userStatus != nil {
 		if strings.Contains(*userStatus, "username") {
 			w.Write([]byte("username already exist"))
@@ -155,16 +160,23 @@ func SignOutHandler(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
-	cookie := SecureCookie.FetchCookie(r)
-	err := SecureCookie.DeleteClientCookie(w, r.URL.Path)
+	cookie, err := SecureCookie.FetchCookie(r)
+	if err != nil {
+		fmt.Printf("main fetch cookie, err: %v", err)
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+	err = SecureCookie.DeleteClientCookie(w, r.URL.Path)
 	if err != nil {
 		fmt.Printf("main failed to delete client cookie, err: %v", err)
 		w.WriteHeader(http.StatusBadRequest)
+		return
 	}
 	err = SecureCookie.AuthenticateCookie(w, Server, cookie)
 	if err != nil {
 		fmt.Printf("main failed to delete cookie, err: %v", err)
 		w.WriteHeader(http.StatusBadRequest)
+		return
 	}
 	Server.Database.DeleteCookie(cookie.Id)
 
@@ -173,8 +185,13 @@ func SignOutHandler(w http.ResponseWriter, r *http.Request) {
 func CookieLoginHandler(w http.ResponseWriter, r *http.Request) {
 
 	defer r.Body.Close()
-	cookie := SecureCookie.FetchCookie(r)
-	err := SecureCookie.AuthenticateCookie(w, Server, cookie)
+	cookie, err := SecureCookie.FetchCookie(r)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		fmt.Printf("unable to fetch cookie, err: %v", err)
+		return
+	}
+	err = SecureCookie.AuthenticateCookie(w, Server, cookie)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		fmt.Printf("unable to validate cookie, err: %v", err)
@@ -195,11 +212,13 @@ func ManualLoginHandler(w http.ResponseWriter, r *http.Request) {
 	rBody, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		w.WriteHeader(http.StatusForbidden)
+		return
 	}
 	err = json.Unmarshal(rBody, &rawUserData)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		fmt.Printf("failed to unmarshal: %v", err)
+		return
 	}
 
 	if valid, err := validator.ValidateStruct(rawUserData); !valid {
@@ -256,13 +275,20 @@ func PostCommentHandler (w http.ResponseWriter, r *http.Request){
 	if err != nil {
 		w.WriteHeader(http.StatusForbidden)
 		fmt.Printf("unable to read, err: %v", err)
+		return
 	}
 	err = json.Unmarshal(rBody, &commentRaw)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		fmt.Printf("unable to unmarshal, err: %v", err)
+		return
 	}
-	cookie := SecureCookie.FetchCookie(r)
+	cookie, err := SecureCookie.FetchCookie(r)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		fmt.Printf("unable to fetch cookie: %v", err)
+		return
+	}
 	username := Server.Database.GetUsername(cookie.Id)
 
 	comment := database.Comment{
@@ -282,4 +308,35 @@ func PostCommentHandler (w http.ResponseWriter, r *http.Request){
 
 	Server.Database.InsertToCollection(database.TableComment, comment)
 	// TODO få lagt den inn i topic?
+}
+
+func CreateCaptchaHandler (w http.ResponseWriter, r *http.Request){
+
+	sessionId := captcha.New()
+	err := captcha.WriteImage(w, sessionId, 240, 80)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+	}
+
+
+	/*if r.Method == http.MethodGet {
+		sessionID := app.CreateHash(string(time.Now().UnixNano()))
+		w.
+
+	} else if r.Method == http.MethodPost {
+		var signUpSession database.SignupSession
+		rBody, err := ioutil.ReadAll(r.Body)
+		if err != nil {
+			w.WriteHeader(http.StatusForbidden)
+			fmt.Printf("unable to read, err: %v", err)
+			return
+		}
+		err = json.Unmarshal(rBody, &signUpSession)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			fmt.Printf("unable to unmarshal, err: %v", err)
+			return
+		}
+	}
+*/
 }
