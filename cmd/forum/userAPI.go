@@ -77,8 +77,21 @@ func CreateNewTopic(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	topic.Username = username
-	//Create Topic WITH ObjectId, i.e. add ID manually after decode?
-	//TODO: push ObjectId to TableCategory, push Topic to TableTopic... use db.Upsert?
+
+	topic.Category = category.Name
+
+	if valid, err := validator.ValidateStruct(topic); !valid {
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			fmt.Printf("unable to validate topic: %+v\n", err)
+			fmt.Printf("request body: %+v", string(rBody))
+		}
+		w.WriteHeader(http.StatusBadRequest)
+		fmt.Fprint(w, "Topic contains disallowed letters")
+		return
+	}
+
+	//push ObjectId to TableCategory, push Topic to TableTopic... use db.Upsert?
 	if err = Server.Database.CreateTopic(categoryName, topic, sessPtr); err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		fmt.Fprintf(w, "Something bad happened 😮\n")
@@ -119,13 +132,13 @@ func CreateNewComment(w http.ResponseWriter, r *http.Request) {
 	rBody, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		fmt.Printf("unable to read, err: %v", err)
+		fmt.Printf("unable to read, err: %v\n", err)
 		return
 	}
 	err = json.Unmarshal(rBody, &comment)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		fmt.Printf("unable to unmarshal, err: %v", err)
+		fmt.Printf("unable to unmarshal, err: %v\n", err)
 		return
 	}
 	comment.Username = username
@@ -133,7 +146,8 @@ func CreateNewComment(w http.ResponseWriter, r *http.Request) {
 	if valid, err := validator.ValidateStruct(comment); !valid {
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
-			fmt.Printf("unable to validate comment: %v", err)
+			fmt.Printf("unable to validate comment: %+v\n", err)
+			fmt.Printf("request body: %+v", string(rBody))
 		}
 		w.WriteHeader(http.StatusBadRequest)
 		fmt.Fprint(w, "Comment contains disallowed letters")

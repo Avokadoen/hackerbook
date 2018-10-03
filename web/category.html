@@ -39,19 +39,18 @@
             <p id="postedTopicMessage"></p>
         </div>
         <input type="button" onClick="postTopicVisible()" value="Create new topic">
-        <ul>
-            {{range .Topics}}
-                <div>
-                <h2 class="noPad"><a href="/r/{{ $.Name }}/{{ .Id.Hex }}#{{with $x := urlquery .Title}}{{ printf "%.25s" $x }}{{end}}">{{ html .Title }}</a></h2>
+        <hr size="1">
+            {{range $i, $t := .Topics}}
+                <div class="noPad" style="background-color: #{{with $o := mod $i 2}}{{if eq $o 0}}000{{else}}222{{end}}{{end}};">
+                <h2 class="noPad"><a href="/r/{{ $.Name }}/{{ $t.Id.Hex }}#{{with $x := urlquery $t.Title}}{{ printf "%.25s" $x }}{{end}}">{{ html $t.Title }}</a></h2>
                 </br>
-                <h4 class="noPad"><i>{{with $x := html .Content | printf "%.100s"}}{{$x}}...{{end}}</i></h4>
+                <h4 class="noPad"><i>{{with $x := $t.Content | printf "%.80s"}}{{ html $x }}{{$y:=len $t.Content}}{{if gt $y 80}}...{{end}}{{end}}</i></h4>
                 </br>
-                <h5 class="noPad">{{ len .Comments }} Comments</h5>
-                <h5 class="noPad">by {{.Username }}</h5>
+                <h5 class="noPad">{{ len $t.Comments }} Comments</h5>
+                <h5 class="noPad">by {{ $t.Username }}</h5>
                 <hr size="1">
-                </div>
+            </div>
             {{end}}
-        </ul>
     </div>
 </body>
 </html>

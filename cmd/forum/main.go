@@ -51,6 +51,7 @@ func main() {
 
 	// POST HANDLES
 	router.HandleFunc("/cookielogin", CookieLoginHandler).Methods(http.MethodPost)
+	router.HandleFunc("/verifyadmin", AuthenticateAdminHandler).Methods(http.MethodPost)
 	router.HandleFunc("/postlogin", ManualLoginHandler).Methods(http.MethodPost).Headers("Content-Type", "application/json")
 	router.HandleFunc("/signup", SignUpHandler).Methods(http.MethodPost).Headers("Content-Type", "application/json")
 	router.HandleFunc("/postcomment", PostCommentHandler).Methods(http.MethodPost).Headers("Content-Type", "application/json")

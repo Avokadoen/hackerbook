@@ -15,20 +15,20 @@ import (
 const (
 	//DATABASE TABLES
 	TableCategory = "category"
-	TableUser    = "user"
+	TableUser     = "user"
 	TableTopic    = "topic"
 	TableCookie   = "cookie"
 	//TableTopic = "topic"
 	TableComment    = "comment"
 	TableEmailToken = "eToken"
+	TableAdmin      = "admin"
 )
 
 const (
 	// COOKIE CONST
-	CookieName = "HackerBook"
+	CookieName       = "HackerBook"
 	CookieExpiration = time.Hour
 )
-
 
 type Db interface { //TODO: split interface on type of access
 	InitState()
@@ -37,6 +37,7 @@ type Db interface { //TODO: split interface on type of access
 	ValidateMainSession() error
 	InsertToCollection(collectionName string, data interface{}, session *mgo.Session) error
 	AuthenticateUser(user LoginUser, session *mgo.Session) bson.ObjectId
+	AuthenticateAdmin(userID bson.ObjectId, session *mgo.Session) bson.ObjectId
 	IsExistingUser(user SignUpUser, session *mgo.Session) (*string, error)
 	GetCookie(cookie CookieData, entry *CookieData, session *mgo.Session)
 	DeleteCookie(id bson.ObjectId, session *mgo.Session)
@@ -61,7 +62,12 @@ type SignUpUser struct {
 	Email    string        `json:"email" valid:"email, required"`
 	Username string        `json:"username" valid:"alphanum, required"`
 	Password string        `json:"password" valid:"alphanum, required"`
-	Response string		   `json:"captcha" valid:"ascii, required"`
+	Response string        `json:"captcha" valid:"ascii, required"`
+}
+
+type AdminUser struct {
+	Id     bson.ObjectId `bson:"_id,omitempty" valid:"-, optional"`
+	UserID bson.ObjectId `json:"userID" valid:"-, required"`
 }
 
 type EmailToken struct { // Unverified emails
@@ -75,22 +81,22 @@ type LoginUser struct {
 }
 
 type CookieData struct {
-	Id    bson.ObjectId `json:"id" valid:"-, required"`
+	Id    bson.ObjectId `json:"userid" valid:"-, required"`
 	Token string        `json:"token" valid:"alphanum, required"`
 }
 
 type Topic struct {
-	Id       bson.ObjectId `bson:"_id" valid:"-, required"`
+	Id       bson.ObjectId `bson:"_id" valid:"-, optional"`
 	Category string        `json:"name" valid:"alphanum, required"`
 	Username string        `json:"username" valid:"alphanum, required"`
-	Title    string        `json:"title" valid:"utfletternum, required"`
-	Content  string        `json:"content" valid:"utfletternum, required"`
+	Title    string        `json:"title" valid:"printableascii, required"`
+	Content  string        `json:"content" valid:"halfwidth"`
 }
 
 type Comment struct {
 	CommentID bson.ObjectId `bson:"_id,omitempty" valid:"-, optional"`
 	Username  string        `json:"username" valid:"alphanum, required"`
-	Text      string        `json:"text" valid:"utfletternum, required"`
+	Text      string        `json:"text" valid:"halfwidth"`
 }
 
 func (db *DbState) InitState() {
@@ -143,11 +149,11 @@ func (db *DbState) CreateSessionPtr() (*mgo.Session, error) {
 func (db *DbState) EnsureAllIndices() error {
 
 	categoryIndex := mgo.Index{
-		Key: []string{"name"},
-		Unique: true,
-		DropDups: true,
+		Key:        []string{"name"},
+		Unique:     true,
+		DropDups:   true,
 		Background: false,
-		Sparse: false,
+		Sparse:     false,
 	}
 	collCategory := db.getCollection(TableCategory, db.Session)
 	err := collCategory.DropAllIndexes()
@@ -159,11 +165,11 @@ func (db *DbState) EnsureAllIndices() error {
 		return fmt.Errorf("EnsureAllIndices\n category failed, err: %+v", err)
 	}
 	userIndex := mgo.Index{
-		Key: []string{"username"},
-		Unique: true,
-		DropDups: true,
+		Key:        []string{"username"},
+		Unique:     true,
+		DropDups:   true,
 		Background: false,
-		Sparse: false,
+		Sparse:     false,
 	}
 	collUser := db.getCollection(TableUser, db.Session)
 	err = collUser.DropAllIndexes()
@@ -175,11 +181,11 @@ func (db *DbState) EnsureAllIndices() error {
 		return fmt.Errorf("EnsureAllIndices\n user failed, err: %+v", err)
 	}
 	cookieIndex := mgo.Index{
-		Key: []string{"token"},
-		Unique: true,
-		DropDups: true,
-		Background: false,
-		Sparse: false,
+		Key:         []string{"token"},
+		Unique:      true,
+		DropDups:    true,
+		Background:  false,
+		Sparse:      false,
 		ExpireAfter: CookieExpiration,
 	}
 	collCook := db.getCollection(TableCookie, db.Session)
@@ -192,12 +198,13 @@ func (db *DbState) EnsureAllIndices() error {
 	if err != nil {
 		return fmt.Errorf("EnsureAllIndices\n cookie failed, err: %+v", err)
 	}
+
 	/*topicIndex := mgo.Index{
 		Key: []string{"_id"},
 		Unique: true,
 		DropDups: true,
 		Background: false,
-		Sparse: false,
+		Sparse:     false,
 	}
 	collTopic := db.getCollection(TableTopic, db.Session)
 	err = collCook.DropAllIndexes()
@@ -249,6 +256,16 @@ func (db *DbState) AuthenticateUser(user LoginUser, session *mgo.Session) bson.O
 	return storedUser.Id
 }
 
+func (db *DbState) AuthenticateAdmin(userID bson.ObjectId, session *mgo.Session) bson.ObjectId {
+	collection := db.getCollection(TableAdmin, session)
+	var adminUser AdminUser
+	err := collection.Find(bson.M{"userID": userID.Hex()}).One(&adminUser)
+	if err != nil {
+		log.Printf("%+v", err)
+		return bson.ObjectId(0)
+	}
+	return adminUser.Id
+}
 
 func (db *DbState) IsExistingUser(user SignUpUser, session *mgo.Session) (*string, error) {
 	collection := db.getCollection(TableUser, session)
