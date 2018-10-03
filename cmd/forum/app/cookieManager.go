@@ -11,13 +11,6 @@ import (
 	"gitlab.com/avokadoen/softsecoblig2/lib/database"
 )
 
-
-const (
-	CookieName = "HackerBook"
-	CookieExpiration = time.Hour
-)
-
-
 type SCManager struct {
 	secureCoIns *securecookie.SecureCookie
 }
@@ -41,11 +34,11 @@ func (SCManager *SCManager) FetchCookie(r *http.Request) (database.CookieData, e
 
 	cookieData := database.CookieData{}
 
-	cookie, err := r.Cookie(CookieName)
+	cookie, err := r.Cookie(database.CookieName)
 	if err != nil {
 		return cookieData, err
 	}
-	err = SCManager.secureCoIns.Decode(CookieName, cookie.Value, &cookieData)
+	err = SCManager.secureCoIns.Decode(database.CookieName, cookie.Value, &cookieData)
 	if err != nil {
 		return cookieData, err
 	}
@@ -67,14 +60,14 @@ func (SCManager *SCManager) CreateCookie(w http.ResponseWriter, m bson.ObjectId,
 		Id:    userID,
 		Token: token,
 	}
-	if encoded, err := SCManager.secureCoIns.Encode(CookieName, cookieData); err == nil {
+	if encoded, err := SCManager.secureCoIns.Encode(database.CookieName, cookieData); err == nil {
 		tokenCookie := http.Cookie{
-			Name:     CookieName,
+			Name:     database.CookieName,
 			Value:    encoded,
 			HttpOnly: true,
 			Domain:   u.Hostname(),
-			Expires:  time.Now().Add(CookieExpiration),
-			Secure: true,
+			Expires:  time.Now().Add(database.CookieExpiration),
+			Secure:   false,
 		}
 		fmt.Println("created cookie")
 
@@ -94,9 +87,9 @@ func (SCManager *SCManager) DeleteClientCookie(w http.ResponseWriter, urlString 
 		Id:    bson.ObjectId(0),
 		Token: "",
 	}
-	if encoded, err := SCManager.secureCoIns.Encode(CookieName, cookieData); err == nil {
+	if encoded, err := SCManager.secureCoIns.Encode(database.CookieName, cookieData); err == nil {
 		tokenCookie := http.Cookie{
-			Name:     CookieName,
+			Name:     database.CookieName,
 			Value:    encoded,
 			HttpOnly: true,
 			Domain:   u.Hostname(),
@@ -130,7 +123,7 @@ func (SCManager *SCManager) DeleteDBCookie(clientCookie database.CookieData, Ser
 func (SCManager *SCManager) DecodeDBCookieData(data database.CookieData) database.CookieData {
 
 	decodeData := database.CookieData{}
-	err := SCManager.secureCoIns.Decode(CookieName, data.Token, &decodeData)
+	err := SCManager.secureCoIns.Decode(database.CookieName, data.Token, &decodeData)
 	if err != nil {
 		fmt.Printf("when decoding dbCookie error: %+v", err)
 		return database.CookieData{}
