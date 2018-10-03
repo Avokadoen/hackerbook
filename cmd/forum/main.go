@@ -20,6 +20,10 @@ import (
 	"gitlab.com/avokadoen/softsecoblig2/lib/database"
 )
 
+//var (
+//	LogT = SetLogger()
+//)
+
 /* sources:
 https://www.thepolyglotdeveloper.com/2018/02/encrypt-decrypt-data-golang-application-crypto-packages/
 https://www.kaihag.com/https-and-go/
@@ -37,6 +41,12 @@ func main() {
 		Port:     os.Getenv("PORT"),
 		Database: &database.DbState{},
 	}
+
+	LogT := SetLogger()	//TODO fix it, does not work outside SetLogger function?!
+	LogT.Println("MainTest Println")
+	LogT.Print("MainTest Print\r\n")
+	LogT.Printf("MainTest printf %v","please")
+
 	Server.Database.InitState() // TODO: move to handler or cookie
 	SecureCookie.Init()
 
@@ -89,6 +99,21 @@ func main() {
 			TLSNextProto: make(map[string]func(*http.Server, *tls.Conn, http.Handler), 0),
 		}
 		log.Fatal(srv.ListenAndServeTLS("server.crt", "server.key"))*/
+}
+
+func SetLogger()(*log.Logger){ // Testing setting new loggers.
+	errorLog, err := os.OpenFile("info.log", os.O_WRONLY|os.O_CREATE|os.O_APPEND,0644)
+	if err!= nil{
+		fmt.Printf("error opening file: %v", err)
+	}
+	defer errorLog.Close()
+	//logger.SetOutput(errorLog)
+	//logger.Print("Loggertest\r\n")
+	logger := log.New(errorLog,"logtest: ", 1)
+	logger.Println("Setlogger\r\n")
+	//mgo.SetLogger(logger) // Gjør mgo nå me dt?!?
+	//mgo.SetDebug(true)
+	return logger
 }
 
 func SignUpHandler(w http.ResponseWriter, r *http.Request) {
