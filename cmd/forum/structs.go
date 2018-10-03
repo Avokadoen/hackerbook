@@ -51,3 +51,14 @@ type Comment struct {
 	Username string   `json:"username"`
 	ReplyTo  *Comment //if not a reply -> nil
 }
+
+//Struct for captcha
+type ReCaptcha struct {
+	Secret string `json:"secret"`
+	Response string `json:"response"`
+}
+
+type ReCaptchaResponse struct {
+	Success bool `json:"success"`
+	Errorcode []string `json:"error-codes"`
+}

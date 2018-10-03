@@ -1,28 +1,5 @@
 var PW = new String();
 
-function generateCaptcha(){
-    var req = new XMLHttpRequest();
-
-    req.open("GET", window.location.origin + "/createcaptcha", true);
-    //req.responseType = "blob";
-    req.setRequestHeader('charset', 'utf-8');
-    req.send();
-
-
-    req.onload = function() {
-        //var b64 = btoa(this.responseText);
-        //var outputImg =
-        var imgdata = this.responseText;
-        var reader = new FileReader();
-        document.getElementById("captchaIMG").src = 'data:image/png;base64, ' + encodeURIComponent(imgdata);
-        //document.getElementById("captchaIMG").src = /data:image\/png;base64,/.concat(this.responseText);
-        //$('#captchaIMG').attr('src', 'data:image/png;base64,' + this.responseText);
-        //document.getElementById("captchaIMG").src(image.src);
-        //document.body.appendChild(image);
-
-    }
-}
-
 function handleSignup(event){
     var answer = "Something went wrong";
     var req = new XMLHttpRequest();
@@ -34,12 +11,10 @@ function handleSignup(event){
             email:      event.email.value,
             username:   event.username.value,
             password:   event.password.value,
-            sessionID:  sessionID,
-            captcha:    event.captcha.value
+            captcha:   grecaptcha.getResponse()
         }));
 
-
-        req.onload = function() {
+            req.onload = function() {
             answer = this.responseText;
             document.getElementById("errorMessage").innerHTML = answer;
             if(answer === "") {
