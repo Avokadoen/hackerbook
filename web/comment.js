@@ -1,4 +1,4 @@
-function postComment(event){
+function postComment(event, replyRef = -1){
     var answer = "Something went wrong";
     var req = new XMLHttpRequest();
 
@@ -8,13 +8,14 @@ function postComment(event){
         req.setRequestHeader('Content-Type', 'application/json');
         req.send(JSON.stringify({
             username: loggedInUser, //Fetch username somehow
-            text: event.commentInput.value
+            text: event.commentInput.value,
+            replyto: replyRef
         }));
 
 
         req.onload = function() {
             answer = this.responseText;
-            document.getElementById("commentMessage").innerHTML = answer;
+            document.getElementById("commentMessage-"+replyRef).innerHTML = answer;
             if(req.status == 201) { //if StatusCreated
                 location.reload(true) //reload, force new GET request, i.e. don't use cache
             }

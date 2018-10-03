@@ -34,21 +34,62 @@
             <h5 class="noPad">By <i>{{ html .Topic.Username }}</i></h5>
             <p>{{ .Topic.Content | markdown }}</p>
         </div>
-        {{ range .Topic.Comments }}
-        <div class="comment" id={{with $x := urlquery .Text}}{{ printf "%.25s" $x }}{{end}}>
-            <h5 class="noPad">{{ html .Username }}</h5>
-            <p>{{ .Text | markdown }}</p>
-        </div>
+        {{ range $i, $c := .Topic.Comments }}
+            <div class="comment" id={{with $x := urlquery $c.Text | printf "%.30s"}}{{$y :=  urlquery $c.Username | printf "%.16s"}}{{$x}}+{{$y}}{{end}}>
+                {{if gt $c.ReplyTo -1 }}
+                    {{$r := index $.Topic.Comments $c.ReplyTo }}
+                    <button class="collapsible">In response to <i>{{$r.Username}}</i>'s comment...</button>
+                    <div class="content">
+                        <a href=#{{with $x := urlquery $r.Text | printf "%.30s"}}{{$y :=  $r.Username | printf "%.16s"}}{{$x}}+{{$y}}{{end}}>Go to comment...</a>
+                        <div class="comment">
+                            <p>{{ $r.Text | markdown }}</p>
+                            <div class="commentInfo"><span>— <i>{{ html $r.Username }}</i></span></div>
+                        </div>
+                    </div>
+                {{end}}
+            <p>{{ $c.Text | markdown }}</p>
+            <div class="commentInfo"><span>— <i>{{ html $c.Username }}</i></div>
+            <button class="collapsible">Reply...</button>
+            <div class="content">
+                <div id="postComment" class="postComment">
+                    <form action="JavaScript:postComment()">
+                        Comment:</br>
+                        <textarea id="commentInput" name="commentInput" cols="120" rows="10"></textarea>
+                        <input type="button" onClick="postComment(this.form,{{$i}})" value="Post Comment">
+                    </form>
+                    <p id="commentMessage-{{$i}}"></p>
+                </div>
+            </div>
+            </div>
         {{ else }}
+            <div class="comment">
+                <p>nobody has made a comment to this topic yet, be the first!</p>
+            </div>
         {{ end }}
         <div id="postComment" class="postComment">
             <form action="JavaScript:postComment()">
                 Comment:</br>
-                <textarea id="commentInput" name="commentInput" cols="80" rows="10"></textarea>
+                <textarea id="commentInput" name="commentInput" cols="127" rows="10"></textarea>
                 <input type="button" onClick="postComment(this.form)" value="Post Comment">
             </form>
-            <p id="commentMessage"></p>
+            <p id="commentMessage--1"></p>
         </div>
     </div>
 </body>
+<script>
+var coll = document.getElementsByClassName("collapsible");
+var i;
+
+for (i = 0; i < coll.length; i++) {
+  coll[i].addEventListener("click", function() {
+    this.classList.toggle("active");
+    var content = this.nextElementSibling;
+    if (content.style.display === "block") {
+      content.style.display = "none";
+    } else {
+      content.style.display = "block";
+    }
+  });
+}
+</script>
 </html>

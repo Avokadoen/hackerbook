@@ -47,18 +47,18 @@ type Topic struct { //TODO unify with database structs
 
 //Comment within a post
 type Comment struct {
-	Text     string   `json:"text"`
-	Username string   `json:"username"`
-	ReplyTo  *Comment //if not a reply -> nil
+	Text     string `json:"text"`
+	Username string `json:"username"`
+	ReplyTo  int    `json:"replyto"`
 }
 
 //Struct for captcha
 type ReCaptcha struct {
-	Secret string `json:"secret"`
+	Secret   string `json:"secret"`
 	Response string `json:"response"`
 }
 
 type ReCaptchaResponse struct {
-	Success bool `json:"success"`
+	Success   bool     `json:"success"`
 	Errorcode []string `json:"error-codes"`
 }

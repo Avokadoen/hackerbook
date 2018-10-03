@@ -126,6 +126,7 @@ func CreateNewComment(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusInternalServerError)
 			fmt.Printf("unable to validate comment: %+v\n", err)
 			fmt.Printf("request body: %+v", string(rBody))
+			return
 		}
 		w.WriteHeader(http.StatusBadRequest)
 		fmt.Fprint(w, "Comment contains disallowed letters")

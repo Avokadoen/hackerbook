@@ -14,11 +14,10 @@ import (
 
 const (
 	//DATABASE TABLES
-	TableCategory = "category"
-	TableUser     = "user"
-	TableTopic    = "topic"
-	TableCookie   = "cookie"
-	//TableTopic = "topic"
+	TableCategory   = "category"
+	TableUser       = "user"
+	TableTopic      = "topic"
+	TableCookie     = "cookie"
 	TableComment    = "comment"
 	TableEmailToken = "eToken"
 	TableAdmin      = "admin"
@@ -97,6 +96,7 @@ type Comment struct {
 	CommentID bson.ObjectId `bson:"_id,omitempty" valid:"-, optional"`
 	Username  string        `json:"username" valid:"alphanum, required"`
 	Text      string        `json:"text" valid:"halfwidth"`
+	ReplyTo   int           `json:"replyto" valid:"int, optional"`
 }
 
 func (db *DbState) InitState() {
