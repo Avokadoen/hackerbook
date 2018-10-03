@@ -186,6 +186,7 @@ func (db *DbState) EnsureAllIndices() error {
 	err = collCook.DropAllIndexes()
 	if err != nil {
 		return fmt.Errorf("DropAllIndexes\n cookie failed, err: %+v", err)
+		
 	}
 	err = collCook.EnsureIndex(cookieIndex)
 	if err != nil {
