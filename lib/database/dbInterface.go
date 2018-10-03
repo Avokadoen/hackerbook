@@ -14,7 +14,7 @@ import (
 const (
 	//DATABASE TABLES
 	TableCategory = "category"
-	TableUser    = "user"
+	TableUser     = "user"
 	TableTopic    = "topic"
 	TableCookie   = "cookie"
 	//TableTopic = "topic"
@@ -66,22 +66,22 @@ type LoginUser struct {
 }
 
 type CookieData struct {
-	Id    bson.ObjectId `json:"id" valid:"-, required"`
+	Id    bson.ObjectId `json:"userid" valid:"-, required"`
 	Token string        `json:"token" valid:"alphanum, required"`
 }
 
 type Topic struct {
-	Id       bson.ObjectId `bson:"_id" valid:"-, required"`
+	Id       bson.ObjectId `bson:"_id" valid:"-, optional"`
 	Category string        `json:"name" valid:"alphanum, required"`
 	Username string        `json:"username" valid:"alphanum, required"`
-	Title    string        `json:"title" valid:"utfletternum, required"`
-	Content  string        `json:"content" valid:"utfletternum, required"`
+	Title    string        `json:"title" valid:"printableascii, required"`
+	Content  string        `json:"content" valid:"halfwidth"`
 }
 
 type Comment struct {
 	CommentID bson.ObjectId `bson:"_id,omitempty" valid:"-, optional"`
 	Username  string        `json:"username" valid:"alphanum, required"`
-	Text      string        `json:"text" valid:"utfletternum, required"`
+	Text      string        `json:"text" valid:"halfwidth"`
 }
 
 func (db *DbState) InitState() {
@@ -121,13 +121,13 @@ func (db *DbState) CreateSession() (err error) {
 }
 
 func (db *DbState) EnsureAllIndices() error {
-	// category, users, topic, cookie,  
+	// category, users, topic, cookie,
 	categoryIndex := mgo.Index{
-		Key: []string{"name"},
-		Unique: true,
-		DropDups: true,
+		Key:        []string{"name"},
+		Unique:     true,
+		DropDups:   true,
 		Background: false,
-		Sparse: false,
+		Sparse:     false,
 	}
 	collCategory := db.getCollection(TableCategory)
 	err := collCategory.EnsureIndex(categoryIndex)
@@ -135,11 +135,11 @@ func (db *DbState) EnsureAllIndices() error {
 		return fmt.Errorf("EnsureAllIndices\n category failed, err: %+v", err)
 	}
 	userIndex := mgo.Index{
-		Key: []string{"username"},
-		Unique: true,
-		DropDups: true,
+		Key:        []string{"username"},
+		Unique:     true,
+		DropDups:   true,
 		Background: false,
-		Sparse: false,
+		Sparse:     false,
 	}
 	collUser := db.getCollection(TableUser)
 	err = collUser.EnsureIndex(userIndex)
@@ -147,11 +147,11 @@ func (db *DbState) EnsureAllIndices() error {
 		return fmt.Errorf("EnsureAllIndices\n user failed, err: %+v", err)
 	}
 	cookieIndex := mgo.Index{
-		Key: []string{"token"},
-		Unique: true,
-		DropDups: true,
+		Key:        []string{"token"},
+		Unique:     true,
+		DropDups:   true,
 		Background: false,
-		Sparse: false,
+		Sparse:     false,
 		//ExpireAfter: app.CookieExpiration,
 	}
 	collCook := db.getCollection(TableCookie)
@@ -160,11 +160,11 @@ func (db *DbState) EnsureAllIndices() error {
 		return fmt.Errorf("EnsureAllIndices\n topic failed, err: %+v", err)
 	}
 	topicIndex := mgo.Index{
-		Key: []string{"_id"},
-		Unique: true,
-		DropDups: true,
+		Key:        []string{"_id"},
+		Unique:     true,
+		DropDups:   true,
 		Background: false,
-		Sparse: false,
+		Sparse:     false,
 	}
 	collTopic := db.getCollection(TableTopic)
 	err = collTopic.EnsureIndex(topicIndex)

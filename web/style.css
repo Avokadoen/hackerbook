@@ -7,19 +7,17 @@ p, h1, h2, h3, h4, h5, div {
     font-family: Consolas,monaco,monospace;
 }
 
+div.topic * {
+    color: #efe;
+}
 pre {
     background-color: #222;
 }
-div.topic pre code,
-div.topic code,
+
 code {
     font-family: Courier;
-    color: greenyellow;
+    color: #09f;
     font-weight: bolder;
-}
-
-div.topic * {
-    color: #efe;
 }
 
 h1 a{
@@ -54,7 +52,7 @@ div.center {
     margin: auto;
     width: 50%;
     border: 1px solid lawngreen;
-    background-color: black;
+    background-image: radial-gradient(#222, #111, #000);
     padding-left: 10px;
     padding-right: 0px;
 }

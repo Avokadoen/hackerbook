@@ -11,12 +11,10 @@ import (
 	"gitlab.com/avokadoen/softsecoblig2/lib/database"
 )
 
-
 const (
-	CookieName = "HackerBook"
+	CookieName       = "HackerBook"
 	CookieExpiration = time.Hour
 )
-
 
 type SCManager struct {
 	secureCoIns *securecookie.SecureCookie
@@ -74,7 +72,7 @@ func (SCManager *SCManager) CreateCookie(w http.ResponseWriter, m bson.ObjectId,
 			HttpOnly: true,
 			Domain:   u.Hostname(),
 			Expires:  time.Now().Add(CookieExpiration),
-			Secure: true,
+			Secure:   false,
 		}
 		fmt.Println("created cookie")
 
@@ -101,7 +99,7 @@ func (SCManager *SCManager) DeleteClientCookie(w http.ResponseWriter, urlString 
 			HttpOnly: true,
 			Domain:   u.Hostname(),
 			Expires:  time.Now(),
-			Secure: true,
+			Secure:   true,
 		}
 		fmt.Println("delete cookie")
 
