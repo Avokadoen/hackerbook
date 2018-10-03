@@ -163,7 +163,7 @@ func SignUpHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	Server.Database.InsertToCollection(database.TableUsers, user)
+	Server.Database.InsertToCollection(database.TableUser, user)
 	fmt.Println("user inserted in database!")
 	EmailVerification(w, r, user)
 }

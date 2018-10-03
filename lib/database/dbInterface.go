@@ -14,7 +14,7 @@ import (
 const (
 	//DATABASE TABLES
 	TableCategory = "category"
-	TableUsers    = "users"
+	TableUser    = "user"
 	TableTopic    = "topic"
 	TableCookie   = "cookie"
 	//TableTopic = "topic"
@@ -109,12 +109,70 @@ func (db *DbState) CreateSession() (err error) {
 	if db.Session == nil {
 		log.Fatal("Session was nil")
 	}
-
 	if err != nil {
 		err = fmt.Errorf("died on error: %+v", err)
 	}
 
-	return err
+	err = db.EnsureAllIndices()
+	if err != nil {
+		return fmt.Errorf("died on error: %+v", err)
+	}
+
+	return nil
+}
+
+func (db *DbState) EnsureAllIndices() error {
+	// category, users, topic, cookie,  
+	categoryIndex := mgo.Index{
+		Key: []string{"name"},
+		Unique: true,
+		DropDups: true,
+		Background: false,
+		Sparse: false,
+	}
+	collCategory := db.getCollection(TableCategory)
+	err := collCategory.EnsureIndex(categoryIndex)
+	if err != nil {
+		return fmt.Errorf("EnsureAllIndices\n category failed, err: %+v", err)
+	}
+	userIndex := mgo.Index{
+		Key: []string{"username"},
+		Unique: true,
+		DropDups: true,
+		Background: false,
+		Sparse: false,
+	}
+	collUser := db.getCollection(TableUser)
+	err = collUser.EnsureIndex(userIndex)
+	if err != nil {
+		return fmt.Errorf("EnsureAllIndices\n user failed, err: %+v", err)
+	}
+	cookieIndex := mgo.Index{
+		Key: []string{"token"},
+		Unique: true,
+		DropDups: true,
+		Background: false,
+		Sparse: false,
+		//ExpireAfter: app.CookieExpiration,
+	}
+	collCook := db.getCollection(TableCookie)
+	err = collCook.EnsureIndex(cookieIndex)
+	if err != nil {
+		return fmt.Errorf("EnsureAllIndices\n topic failed, err: %+v", err)
+	}
+	topicIndex := mgo.Index{
+		Key: []string{"_id"},
+		Unique: true,
+		DropDups: true,
+		Background: false,
+		Sparse: false,
+	}
+	collTopic := db.getCollection(TableTopic)
+	err = collTopic.EnsureIndex(topicIndex)
+	if err != nil {
+		return fmt.Errorf("EnsureAllIndices\n topic failed, err: %+v", err)
+	}
+	return nil
 }
 
 func (db *DbState) ValidateSession() error {
@@ -138,7 +196,7 @@ func (db *DbState) InsertToCollection(collectionName string, data interface{}) e
 }
 
 func (db *DbState) AuthenticateUser(user LoginUser) bson.ObjectId {
-	collection := db.getCollection(TableUsers)
+	collection := db.getCollection(TableUser)
 	var storedUser SignUpUser
 	err := collection.Find(bson.M{"username": user.Username, "password": user.Password}).One(&storedUser)
 	if err != nil {
@@ -160,7 +218,7 @@ func (db *DbState) AuthenticateUser(user LoginUser) bson.ObjectId {
 }*/
 
 func (db *DbState) IsExistingUser(user SignUpUser) (*string, error) {
-	collection := db.getCollection(TableUsers)
+	collection := db.getCollection(TableUser)
 	rtrString := new(string)
 	rtrNil := true
 	count, err := collection.Find(bson.M{"username": user.Username}).Count()
@@ -207,7 +265,7 @@ func (db *DbState) GetUsername(id bson.ObjectId) string {
 		fmt.Println(err)
 	}
 	user := LoginUser{Username: "<bad boi>"}
-	collection := db.getCollection(TableUsers)
+	collection := db.getCollection(TableUser)
 	err := collection.FindId(bson.ObjectIdHex(id.Hex())).One(&user)
 	if err != nil {
 		fmt.Printf("when retrieving username error: %+v, id: %+v", err, bson.ObjectIdHex(id.Hex()))

@@ -1,17 +1,5 @@
 var PW = new String();
 
-function generateCaptcha(){
-    var req = new XMLHttpRequest();
-
-    req.open("GET", window.location.origin + "/createcaptcha", true);
-    req.setRequestHeader('Content-Type', 'image/png');
-    req.send();
-
-    req.onload = function() {
-        document.getElementById("captchaIMG").src = 'data:image/png;base64,' + btoa(decodeURI(this.responseText));
-    }
-}
-
 function handleSignup(event){
     var answer = "Something went wrong";
     var req = new XMLHttpRequest();
