@@ -38,11 +38,11 @@ type TopicAndCategory struct {
 
 //Topic within a category
 type Topic struct {
-	Id        bson.ObjectId `bson:"_id,omitempty"`
-	Title     string        `json:"title"`
-	Content   string        `json:"content"`
-	Comments  []Comment     `json:"comments"`
-	CreatedBy bson.ObjectId `json:"createdBy"` //user
+	Id       bson.ObjectId `bson:"_id,omitempty"`
+	Title    string        `json:"title"`
+	Content  string        `json:"content"`
+	Comments []Comment     `json:"comments"`
+	Username string        `json:"username"` //user
 }
 
 //Comment within a post

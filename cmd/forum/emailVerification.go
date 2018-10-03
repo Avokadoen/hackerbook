@@ -9,12 +9,11 @@ import (
 	"os"
 )
 
-
 func EmailVerification(w http.ResponseWriter, r *http.Request, user database.SignUpUser) {
 	emailToken := app.CreateHash(user.Email)
 	token := database.EmailToken{
 		Username: user.Username,
-		Token: emailToken,
+		Token:    emailToken,
 	}
 	Server.Database.InsertToCollection(database.TableEmailToken, token)
 	link := r.URL.Hostname() + "/email-verification@token=" + emailToken
@@ -25,8 +24,8 @@ func EmailVerification(w http.ResponseWriter, r *http.Request, user database.Sig
 	emailPw := os.Getenv("EMAILPW")
 	auth := smtp.PlainAuth("", email, emailPw, serverName)
 	message := "Click here to verify user : " + link
-	err := smtp.SendMail(serverName + ":" + port, auth, email, []string {user.Email}, []byte(message))
-	if err != nil{
+	err := smtp.SendMail(serverName+":"+port, auth, email, []string{user.Email}, []byte(message))
+	if err != nil {
 		log.Printf("Failed to send mail: %v", err)
 	}
 	//tlsconfig := &tls.Config{

@@ -37,6 +37,7 @@ type Db interface { //TODO: split interface on type of access
 	GetCategories(categories interface{}) error
 	GetCategory(categoryName string, category interface{}) error
 	GetTopic(categoryName string, topicID string, topic interface{}) error
+	CreateTopic(categoryName string, topic Topic) error
 	PushTopicComment(topicID string, comment Comment) error
 }
 
@@ -71,11 +72,11 @@ type CookieData struct {
 }
 
 type Topic struct {
-	CategoryID        string `bson:"_id,omitempty" valid:"-, optional"`
-	CreatedBy         string `json:"createdBy" valid:"alphanum, required"`
-	Title             string `json:"title" valid:"utfletternum, required"`
-	Content           string `json:"content" valid:"utfletternum, required"`
-	commentCollection []Comment
+	Id       bson.ObjectId `bson:"_id" valid:"-, required"`
+	Category string        `json:"name" valid:"alphanum, required"`
+	Username string        `json:"username" valid:"alphanum, required"`
+	Title    string        `json:"title" valid:"utfletternum, required"`
+	Content  string        `json:"content" valid:"utfletternum, required"`
 }
 
 type Comment struct {
@@ -202,6 +203,9 @@ func (db *DbState) DeleteCookie(id bson.ObjectId) {
 }
 
 func (db *DbState) GetUsername(id bson.ObjectId) string {
+	if err := db.ValidateSession(); err != nil {
+		fmt.Println(err)
+	}
 	user := LoginUser{Username: "<bad boi>"}
 	collection := db.getCollection(TableUsers)
 	err := collection.FindId(bson.ObjectIdHex(id.Hex())).One(&user)
@@ -290,4 +294,16 @@ func (db *DbState) PushTopicComment(topicID string, comment Comment) error {
 	update := bson.M{"$push": bson.M{"comments": bson.M{"$each": []Comment{comment}}}}
 
 	return db.getCollection(TableTopic).Update(selector, update)
+}
+func (db *DbState) CreateTopic(categoryName string, topic Topic) error {
+	if err := db.ValidateSession(); err != nil {
+		return err
+	}
+	topic.Id = bson.NewObjectId()
+	db.InsertToCollection(TableTopic, topic)
+
+	selector := bson.M{"name": categoryName}
+	update := bson.M{"$push": bson.M{"topics": bson.M{"$each": []bson.ObjectId{topic.Id}}}}
+
+	return db.getCollection(TableCategory).Update(selector, update)
 }

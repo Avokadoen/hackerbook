@@ -1,14 +1,29 @@
 body {
-    background-color: black;
+    background-image: url(https://upload.wikimedia.org/wikipedia/commons/a/a0/Digital_rain_animation_small_letters_shine.gif);
+    background-repeat: repeat;
 }
 p, h1, h2, h3, h4, h5, div {
     color: lawngreen;
     font-family: Consolas,monaco,monospace;
 }
 
+pre {
+    background-color: #222;
+}
+div.topic pre code,
+div.topic code,
+code {
+    font-family: Courier;
+    color: greenyellow;
+    font-weight: bolder;
+}
+
+div.topic * {
+    color: #efe;
+}
+
 h1 a{
     color: lawngreen;
-
 }
 
 h1 a:visited{

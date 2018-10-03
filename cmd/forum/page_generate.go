@@ -7,6 +7,8 @@ import (
 
 	"github.com/globalsign/mgo/bson"
 	"github.com/gorilla/mux"
+	"github.com/microcosm-cc/bluemonday"
+	blackfriday "gopkg.in/russross/blackfriday.v2"
 )
 
 type HomePage struct {
@@ -21,8 +23,6 @@ func GenerateHomePage(w http.ResponseWriter, r *http.Request) {
 	//TODO: get stuff from DB... for now I'll use mocked data
 	tmpl := template.Must(template.ParseFiles("./web/index.html"))
 	data := HomePage{categories}
-
-	fmt.Printf("%+v", categories)
 
 	tmpl.Execute(w, data)
 }
@@ -44,20 +44,25 @@ func GenerateTopicPage(w http.ResponseWriter, r *http.Request) {
 	var topic TopicAndCategory
 
 	if !bson.IsObjectIdHex(vars["topicID"]) {
-		NoContentHandler(w, r)
+		NotFoundHandler(w, r)
 		return
 	}
 
 	Server.Database.GetTopic(vars["category"], vars["topicID"], &topic)
-	fmt.Printf("Topic Generated page:\n%+v", topic)
 
 	if topic.Name == "" {
-		NoContentHandler(w, r)
+		NotFoundHandler(w, r)
 		return
 	}
 
-	tmpl := template.Must(template.ParseFiles("./web/topic.html"))
-	err := tmpl.Execute(w, topic)
+	markDowner := func(args ...interface{}) template.HTML {
+		unsafeMD := blackfriday.Run([]byte(fmt.Sprintf("%s", args...)))
+		safe := bluemonday.UGCPolicy().SanitizeBytes(unsafeMD)
+		return template.HTML(safe)
+	}
+
+	tmpl := template.Must(template.New("topic.html").Funcs(template.FuncMap{"markdown": markDowner}).ParseFiles("./web/topic.html"))
+	err := tmpl.ExecuteTemplate(w, "topic.html", topic)
 	if err != nil {
 		fmt.Println(err)
 	}
@@ -65,7 +70,7 @@ func GenerateTopicPage(w http.ResponseWriter, r *http.Request) {
 }
 
 //MISC handlers
-func NoContentHandler(w http.ResponseWriter, r *http.Request) {
+func NotFoundHandler(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNotFound)
 	tmpl := template.Must(template.ParseFiles("./web/no_content.html"))
 	tmpl.Execute(w, nil) //TODO: generating actual static pages is kinda bad...
