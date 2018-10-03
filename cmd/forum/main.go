@@ -202,13 +202,13 @@ func CookieLoginHandler(w http.ResponseWriter, r *http.Request) {
 	cookie, err := SecureCookie.FetchCookie(r)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		fmt.Printf("unable to fetch cookie, err: %v", err)
+		fmt.Printf("unable to fetch cookie, err: %v\n", err)
 		return
 	}
 	err = SecureCookie.AuthenticateCookie(w, Server, cookie)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
-		fmt.Printf("unable to validate cookie, err: %v", err)
+		fmt.Printf("\nunable to validate cookie, err: %v\n", err)
 		return
 	}
 	username := Server.Database.GetUsername(cookie.Id)

@@ -5,6 +5,7 @@ import (
 	"log"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/globalsign/mgo"
 	"github.com/globalsign/mgo/bson"
@@ -21,6 +22,13 @@ const (
 	TableComment    = "comment"
 	TableEmailToken = "eToken"
 )
+
+const (
+	// COOKIE CONST
+	CookieName = "HackerBook"
+	CookieExpiration = time.Hour
+)
+
 
 type Db interface { //TODO: split interface on type of access
 	InitState()
@@ -122,7 +130,6 @@ func (db *DbState) CreateSession() (err error) {
 }
 
 func (db *DbState) EnsureAllIndices() error {
-	// category, users, topic, cookie,  
 	categoryIndex := mgo.Index{
 		Key: []string{"name"},
 		Unique: true,
@@ -153,12 +160,12 @@ func (db *DbState) EnsureAllIndices() error {
 		DropDups: true,
 		Background: false,
 		Sparse: false,
-		//ExpireAfter: app.CookieExpiration,
+		ExpireAfter: CookieExpiration,
 	}
 	collCook := db.getCollection(TableCookie)
 	err = collCook.EnsureIndex(cookieIndex)
 	if err != nil {
-		return fmt.Errorf("EnsureAllIndices\n topic failed, err: %+v", err)
+		return fmt.Errorf("EnsureAllIndices\n cookie failed, err: %+v", err)
 	}
 	topicIndex := mgo.Index{
 		Key: []string{"_id"},
