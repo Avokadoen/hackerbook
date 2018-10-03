@@ -7,9 +7,11 @@
     <link rel="shortcut icon" type="image/png" href="/web/favicon.png" />
     <script src="/web/jquery-3.3.1.js"></script>
     <script src="/web/login.js"></script>
+    <script src="/web/admin.js"></script>
 </head>
 <body>
     <script>tryCookieLogin();</script>
+    <script>isAdmin();</script>
     <div id="login" class ="login">
         <form action="JavaScript:handleLogin()">
             Username:
@@ -28,10 +30,22 @@
     <div class="center">
         <ul>
             {{range .Categories}}
-                <h2 class="noPad"><a href="/r/{{ html .Name }}">{{ html .Name }}</h2>
+            <h2 class="noPad"><a href="/r/{{ html .Name }}">{{ html .Name }}</a></h2>
                 <h5 class="noPad">{{ len .Topics }} Topics</h5>
             {{end}}
         </ul>
+        <div id="adminCreateCategory" class ="admin">
+            <form action="JavaScript:createNewCategory()">
+                Category Name:
+                <input id="categoryName" type="text" name="category" value="">
+                <input type="button" onClick="createNewCategory(this.form)" value="Create New Category">
+            </form>
+            <form action="JavaScript:banDude()">
+                Dude to ban:
+                <input id="banUserName" type="text" name="banUserName" value="">
+                <input type="button" onClick="" value="Get bannered">
+            </form>
+        </div>
     </div>
 </body>
 </html>

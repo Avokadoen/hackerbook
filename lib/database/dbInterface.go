@@ -21,6 +21,7 @@ const (
 	//TableTopic = "topic"
 	TableComment    = "comment"
 	TableEmailToken = "eToken"
+	TableAdmin = "admin"
 )
 
 const (
@@ -36,6 +37,7 @@ type Db interface { //TODO: split interface on type of access
 	ValidateSession() error
 	InsertToCollection(collectionName string, data interface{}) error
 	AuthenticateUser(user LoginUser) bson.ObjectId
+	AuthenticateAdmin(userID bson.ObjectId) bson.ObjectId
 	//AuthenticateUserCookie(cookie http.Cookie) bson.ObjectId
 	IsExistingUser(user SignUpUser) (*string, error)
 	GetCookie(cookie CookieData, entry *CookieData)
@@ -62,6 +64,11 @@ type SignUpUser struct {
 	Username string        `json:"username" valid:"alphanum, required"`
 	Password string        `json:"password" valid:"alphanum, required"`
 	Response string		   `json:"captcha" valid:"ascii, required"`
+}
+
+type AdminUser struct {
+	Id       bson.ObjectId `bson:"_id,omitempty" valid:"-, optional"`
+	UserID   bson.ObjectId `json:"userID" valid:"-, required"`
 }
 
 type EmailToken struct { // Unverified emails
@@ -211,6 +218,17 @@ func (db *DbState) AuthenticateUser(user LoginUser) bson.ObjectId {
 		return bson.ObjectId(0)
 	}
 	return storedUser.Id
+}
+
+func (db *DbState) AuthenticateAdmin(userID bson.ObjectId) bson.ObjectId {
+	collection := db.getCollection(TableAdmin)
+	var adminUser AdminUser
+	err := collection.Find(bson.M{"userID": userID.Hex()}).One(&adminUser)
+	if err != nil {
+		log.Printf("%+v", err)
+		return bson.ObjectId(0)
+	}
+	return adminUser.Id
 }
 
 /*func (db *DbState) AuthenticateUserCookie(cookie CookieData) bson.ObjectId {

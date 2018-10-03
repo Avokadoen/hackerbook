@@ -2,21 +2,16 @@ var adminAccess = false;
 
 function isAdmin(){
     var req = new XMLHttpRequest();
-    if(isLoggedIn()){
-        req.open("POST", window.location.origin + "/validateadmin", true);
-        req.setRequestHeader('Content-Type', 'application/json');
-        req.send(JSON.stringify({
-            username: loggedInUser
-        }));
+    req.open("POST", window.location.origin + "/verifyadmin", true);
+    req.setRequestHeader('Content-Type', 'application/json');
+    req.send();
 
-        req.onload = function() {
-            answer = this.responseText;
-            //document.getElementById("loginMessage").innerHTML = answer;
-            if(answer === "Admin success" && this.status === 200){
-                adminAccess = true;
-                $("div.admin").show();
-               }
-        }
+    req.onload = function() {
+        answer = this.responseText;
+        if(answer === "Admin granted" && this.status === 200){
+            adminAccess = true;
+            $("div.admin").show();
+           }
     }
 }
 
@@ -31,9 +26,8 @@ function createNewCategory(event){
 
     req.onload = function() {
         answer = this.responseText;
-        document.getElementById("errorMessage").innerHTML = answer;
         if(answer === "") {
-            document.getElementById("signedUpMessage").innerHTML = "Okey! Cool! Soooo, click here to login now :)";
+
         }
     }
 }

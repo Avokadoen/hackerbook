@@ -79,6 +79,10 @@ div.comment{
     padding-right: 10px;
 
 }
+
+div.admin{
+    display: none;
+}
 input, textarea {
     background-color: black;
     color: lawngreen;
