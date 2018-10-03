@@ -53,6 +53,7 @@ type SignUpUser struct {
 	Email    string        `json:"email" valid:"email, required"`
 	Username string        `json:"username" valid:"alphanum, required"`
 	Password string        `json:"password" valid:"alphanum, required"`
+	Response string		   `json:"captcha" valid:"ascii, required"`
 }
 
 type EmailToken struct { // Unverified emails

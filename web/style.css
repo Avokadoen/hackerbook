@@ -58,6 +58,12 @@ div.center {
     padding-left: 10px;
     padding-right: 0px;
 }
+
+div.g-recaptcha{
+    margin: auto;
+    width: 5%;
+    align-content: center;
+}
 h1.center, h2.center, h3.center, h4.center, h5.center {
     text-align: center;
 }

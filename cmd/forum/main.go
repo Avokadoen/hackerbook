@@ -123,6 +123,17 @@ func SignUpHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	fmt.Println("user signup validated!")
+
+	validateRecaptcha := ValidateReCaptcha(rawUserData.Response)
+
+	if validateRecaptcha == false {
+		fmt.Println("Captcha not validated successfully!")
+		w.Write([]byte("Captcha not validated successfully!"))
+		return
+	} else {
+	fmt.Println("Got through captcha validation!")
+	}
+
 	hashedPass := app.ConvertPlainPassword(rawUserData.Username, rawUserData.Password)
 
 	fmt.Println("hashed password!")
@@ -341,3 +352,4 @@ func CreateCaptchaHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	*/
 }
+
