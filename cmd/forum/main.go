@@ -47,6 +47,7 @@ func main() {
 	router.PathPrefix("/web/").Handler(http.StripPrefix("/web/", fs))
 
 	router.HandleFunc("/cookielogin", CookieLoginHandler).Methods(http.MethodPost)
+	router.HandleFunc("/verifyadmin", AuthenticateAdminHandler).Methods(http.MethodPost)
 	router.HandleFunc("/postlogin", ManualLoginHandler).Methods(http.MethodPost).Headers("Content-Type", "application/json")
 	router.HandleFunc("/signup", SignUpHandler).Methods(http.MethodPost).Headers("Content-Type", "application/json")
 	router.HandleFunc("/createcaptcha", CreateCaptchaHandler)
@@ -123,6 +124,17 @@ func SignUpHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	fmt.Println("user signup validated!")
+
+	validateRecaptcha := ValidateReCaptcha(rawUserData.Response)
+
+	if validateRecaptcha == false {
+		fmt.Println("Captcha not validated successfully!")
+		w.Write([]byte("Captcha not validated successfully!"))
+		return
+	} else {
+	fmt.Println("Got through captcha validation!")
+	}
+
 	hashedPass := app.ConvertPlainPassword(rawUserData.Username, rawUserData.Password)
 
 	fmt.Println("hashed password!")
@@ -191,13 +203,13 @@ func CookieLoginHandler(w http.ResponseWriter, r *http.Request) {
 	cookie, err := SecureCookie.FetchCookie(r)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		fmt.Printf("unable to fetch cookie, err: %v", err)
+		fmt.Printf("unable to fetch cookie, err: %v\n", err)
 		return
 	}
 	err = SecureCookie.AuthenticateCookie(w, Server, cookie)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
-		fmt.Printf("unable to validate cookie, err: %v", err)
+		fmt.Printf("\nunable to validate cookie, err: %v\n", err)
 		return
 	}
 	username := Server.Database.GetUsername(cookie.Id)
@@ -341,3 +353,4 @@ func CreateCaptchaHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	*/
 }
+

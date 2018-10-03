@@ -6,9 +6,11 @@
     <link rel="shortcut icon" type="image/png" href="/web/favicon.png" />
     <script src="/web/jquery-3.3.1.js"></script>
     <script src="/web/signup.js"></script>
+    <script src='https://www.google.com/recaptcha/api.js'></script>
     <title>Signup</title>
 </head>
 <body>
+<h1 class="center"><a href="/">HackerBook v2A.h</a></h1>
 <div class="center">
     <script>generateCaptcha()</script>
     <form class="signUp" action="JavaScript:handleSignup()">
@@ -29,10 +31,7 @@
         <p id="confirmPasswordMessage"></p>
         </br>
         To ensure you are a human:
-        <img id="captchaIMG" src="" width="240" height="80">
-        </br>
-        <input id="captchaInput" type="text" name="captcha" value="">
-        <p id="captchaMessage"></p>
+        <div class="g-recaptcha" data-sitekey="6Lc0UnMUAAAAAKZZmnaY2fxsYTKYW_d_Cdrf-n9n"></div>
         </br>
         <input type="Button" onClick="handleSignup(this.form)" value="SignUp">
         <p id="errorMessage"></p>

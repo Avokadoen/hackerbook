@@ -5,6 +5,7 @@ import (
 	"log"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/globalsign/mgo"
 	"github.com/globalsign/mgo/bson"
@@ -20,6 +21,13 @@ const (
 	//TableTopic = "topic"
 	TableComment    = "comment"
 	TableEmailToken = "eToken"
+	TableAdmin      = "admin"
+)
+
+const (
+	// COOKIE CONST
+	CookieName       = "HackerBook"
+	CookieExpiration = time.Hour
 )
 
 type Db interface { //TODO: split interface on type of access
@@ -28,6 +36,7 @@ type Db interface { //TODO: split interface on type of access
 	ValidateSession() error
 	InsertToCollection(collectionName string, data interface{}) error
 	AuthenticateUser(user LoginUser) bson.ObjectId
+	AuthenticateAdmin(userID bson.ObjectId) bson.ObjectId
 	//AuthenticateUserCookie(cookie http.Cookie) bson.ObjectId
 	IsExistingUser(user SignUpUser) (*string, error)
 	GetCookie(cookie CookieData, entry *CookieData)
@@ -53,6 +62,12 @@ type SignUpUser struct {
 	Email    string        `json:"email" valid:"email, required"`
 	Username string        `json:"username" valid:"alphanum, required"`
 	Password string        `json:"password" valid:"alphanum, required"`
+	Response string        `json:"captcha" valid:"ascii, required"`
+}
+
+type AdminUser struct {
+	Id     bson.ObjectId `bson:"_id,omitempty" valid:"-, optional"`
+	UserID bson.ObjectId `json:"userID" valid:"-, required"`
 }
 
 type EmailToken struct { // Unverified emails
@@ -121,7 +136,6 @@ func (db *DbState) CreateSession() (err error) {
 }
 
 func (db *DbState) EnsureAllIndices() error {
-	// category, users, topic, cookie,
 	categoryIndex := mgo.Index{
 		Key:        []string{"name"},
 		Unique:     true,
@@ -147,17 +161,17 @@ func (db *DbState) EnsureAllIndices() error {
 		return fmt.Errorf("EnsureAllIndices\n user failed, err: %+v", err)
 	}
 	cookieIndex := mgo.Index{
-		Key:        []string{"token"},
-		Unique:     true,
-		DropDups:   true,
-		Background: false,
-		Sparse:     false,
-		//ExpireAfter: app.CookieExpiration,
+		Key:         []string{"token"},
+		Unique:      true,
+		DropDups:    true,
+		Background:  false,
+		Sparse:      false,
+		ExpireAfter: CookieExpiration,
 	}
 	collCook := db.getCollection(TableCookie)
 	err = collCook.EnsureIndex(cookieIndex)
 	if err != nil {
-		return fmt.Errorf("EnsureAllIndices\n topic failed, err: %+v", err)
+		return fmt.Errorf("EnsureAllIndices\n cookie failed, err: %+v", err)
 	}
 	topicIndex := mgo.Index{
 		Key:        []string{"_id"},
@@ -203,6 +217,17 @@ func (db *DbState) AuthenticateUser(user LoginUser) bson.ObjectId {
 		return bson.ObjectId(0)
 	}
 	return storedUser.Id
+}
+
+func (db *DbState) AuthenticateAdmin(userID bson.ObjectId) bson.ObjectId {
+	collection := db.getCollection(TableAdmin)
+	var adminUser AdminUser
+	err := collection.Find(bson.M{"userID": userID.Hex()}).One(&adminUser)
+	if err != nil {
+		log.Printf("%+v", err)
+		return bson.ObjectId(0)
+	}
+	return adminUser.Id
 }
 
 /*func (db *DbState) AuthenticateUserCookie(cookie CookieData) bson.ObjectId {
