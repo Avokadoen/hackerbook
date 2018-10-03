@@ -37,7 +37,7 @@
             <p>{{ .Topic.Content | markdown }}</p>
         </div>
         {{ range .Topic.Comments }}
-        <div class="comment" id={{ printf "%.25s" urlquery .Text }}>
+        <div class="comment" id={{with $x := urlquery .Text}}{{ printf "%.25s" $x }}{{end}}>
             <h5 class="noPad">{{ html .Username }}</h5>
             <p>{{ .Text | markdown }}</p>
         </div>

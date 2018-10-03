@@ -71,6 +71,7 @@ func CreateNewTopic(w http.ResponseWriter, r *http.Request) {
 		fmt.Println(err)
 		return
 	}
+	w.WriteHeader(http.StatusCreated)
 }
 
 func CreateNewComment(w http.ResponseWriter, r *http.Request) {
@@ -125,4 +126,5 @@ func CreateNewComment(w http.ResponseWriter, r *http.Request) {
 		fmt.Println(err)
 		return
 	}
+	w.WriteHeader(http.StatusCreated)
 }

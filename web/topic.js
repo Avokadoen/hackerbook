@@ -16,8 +16,8 @@ function postTopic(event){
         req.onload = function() {
             answer = this.responseText;
             document.getElementById("postedTopicMessage").innerHTML = answer;
-            if(answer === "Topic posted"){ //If successful, display message
-
+            if(req.status == 201) { //if StatusCreated
+                location.reload(true) //reload, force new GET request, i.e. don't use cache
             }
         }
     }

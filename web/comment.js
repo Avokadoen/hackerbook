@@ -15,8 +15,8 @@ function postComment(event){
         req.onload = function() {
             answer = this.responseText;
             document.getElementById("commentMessage").innerHTML = answer;
-            if(answer === "Comment posted"){ //If successful, display message
-
+            if(req.status == 201) { //if StatusCreated
+                location.reload(true) //reload, force new GET request, i.e. don't use cache
             }
         }
     }
