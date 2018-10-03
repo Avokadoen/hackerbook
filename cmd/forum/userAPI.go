@@ -21,14 +21,21 @@ func authenticateUserHandler(w http.ResponseWriter, r *http.Request) string {
 		return ""
 	}
 
-	SecureCookie.AuthenticateCookie(w, Server, cookie)
+	sessPtr, err := Server.Database.CreateSessionPtr()
+	defer sessPtr.Close()
+	if err != nil {
+		fmt.Println(err)
+		return ""
+	}
+
+	SecureCookie.AuthenticateCookie(w, Server, cookie, sessPtr)
 	if err != nil {
 		w.WriteHeader(http.StatusUnauthorized)
 		fmt.Fprintf(w, "Your session is no longer valid 😮\nrelog to post your comment\n")
 		//TODO, be nice with the user and store the comment while he's logging in?
 		return ""
 	}
-	return Server.Database.GetUsername(cookie.Id) //TODO handle errors?
+	return Server.Database.GetUsername(cookie.Id, sessPtr) //TODO handle errors?
 }
 
 //Content creation handlers
@@ -40,8 +47,15 @@ func CreateNewTopic(w http.ResponseWriter, r *http.Request) {
 	categoryName := mux.Vars(r)["category"]
 	//TODO: validate existance of category...
 
+	sessPtr, err := Server.Database.CreateSessionPtr()
+	defer sessPtr.Close()
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
 	var category Category
-	err := Server.Database.GetCategory(categoryName, &category)
+	err = Server.Database.GetCategory(categoryName, &category, sessPtr)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		fmt.Fprintf(w, "Something bad happened 😮\n")
@@ -65,7 +79,7 @@ func CreateNewTopic(w http.ResponseWriter, r *http.Request) {
 	topic.Username = username
 	//Create Topic WITH ObjectId, i.e. add ID manually after decode?
 	//TODO: push ObjectId to TableCategory, push Topic to TableTopic... use db.Upsert?
-	if err = Server.Database.CreateTopic(categoryName, topic); err != nil {
+	if err = Server.Database.CreateTopic(categoryName, topic, sessPtr); err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		fmt.Fprintf(w, "Something bad happened 😮\n")
 		fmt.Println(err)
@@ -84,9 +98,16 @@ func CreateNewComment(w http.ResponseWriter, r *http.Request) {
 	categoryName := vars["category"]
 	topicID := vars["topicID"]
 
+	sessPtr, err := Server.Database.CreateSessionPtr()
+	defer sessPtr.Close()
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
 	//validate existance of topic in category with Id = topicID, simple pipe with lookup and match...
 	var topicInCategory TopicAndCategory
-	err := Server.Database.GetTopic(categoryName, topicID, &topicInCategory)
+	err = Server.Database.GetTopic(categoryName, topicID, &topicInCategory, sessPtr)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		fmt.Fprintf(w, "Something bad happened 😮\n")
@@ -120,7 +141,7 @@ func CreateNewComment(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Update topic with new comment
-	if err = Server.Database.PushTopicComment(topicID, comment); err != nil {
+	if err = Server.Database.PushTopicComment(topicID, comment, sessPtr); err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		fmt.Fprintf(w, "Something bad happened 😮\n")
 		fmt.Println(err)

@@ -1,16 +1,12 @@
 package main
 
 import (
-	"gitlab.com/avokadoen/softsecoblig2/cmd/forum/app"
 	"gitlab.com/avokadoen/softsecoblig2/lib/database"
-	"log"
 	"net/http"
-	"net/smtp"
-	"os"
 )
 
 func EmailVerification(w http.ResponseWriter, r *http.Request, user database.SignUpUser) {
-	emailToken := app.CreateHash(user.Email)
+	/*emailToken := app.CreateHash(user.Email)
 	token := database.EmailToken{
 		Username: user.Username,
 		Token:    emailToken,
@@ -27,7 +23,7 @@ func EmailVerification(w http.ResponseWriter, r *http.Request, user database.Sig
 	err := smtp.SendMail(serverName+":"+port, auth, email, []string{user.Email}, []byte(message))
 	if err != nil {
 		log.Printf("Failed to send mail: %v", err)
-	}
+	}*/
 	//tlsconfig := &tls.Config{
 	//	InsecureSkipVerify: true,
 	//	ServerName: serverName,

@@ -7,7 +7,6 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/dchest/captcha"
 	"github.com/globalsign/mgo/bson"
 
 	"log"
@@ -37,7 +36,11 @@ func main() {
 		Port:     os.Getenv("PORT"),
 		Database: &database.DbState{},
 	}
-	Server.Database.InitState() // TODO: move to handler or cookie
+	Server.Database.InitState() // TODO: use session copies instead of main pointer
+	err := Server.Database.CreateMainSession()
+	if err != nil {
+		panic("failed to create db session\n" + err.Error())
+	}
 	SecureCookie.Init()
 
 	router := mux.NewRouter().StrictSlash(false)
@@ -46,10 +49,10 @@ func main() {
 
 	router.PathPrefix("/web/").Handler(http.StripPrefix("/web/", fs))
 
+	// POST HANDLES
 	router.HandleFunc("/cookielogin", CookieLoginHandler).Methods(http.MethodPost)
 	router.HandleFunc("/postlogin", ManualLoginHandler).Methods(http.MethodPost).Headers("Content-Type", "application/json")
 	router.HandleFunc("/signup", SignUpHandler).Methods(http.MethodPost).Headers("Content-Type", "application/json")
-	router.HandleFunc("/createcaptcha", CreateCaptchaHandler)
 	router.HandleFunc("/postcomment", PostCommentHandler).Methods(http.MethodPost).Headers("Content-Type", "application/json")
 	router.HandleFunc("/signout", SignOutHandler).Methods(http.MethodPost).Headers("Content-Type", "application/json")
 
@@ -60,15 +63,14 @@ func main() {
 	router.HandleFunc("/", GenerateHomePage)
 	router.HandleFunc("/r/{category}", GenerateCategoryPage)
 	router.HandleFunc("/r/{category}/newtopic", CreateNewTopic).Methods(http.MethodPost)
-
 	router.HandleFunc("/r/{category}/{topicID}", GenerateTopicPage).Methods(http.MethodGet)
-
 	router.HandleFunc("/r/{category}/{topicID}/comment", CreateNewComment).Methods(http.MethodPost)
-
 	router.NotFoundHandler = http.HandlerFunc(NotFoundHandler) //set 404 default handle
 
 	fmt.Printf("\nListening through port %v...\n", Server.Port)
-	http.ListenAndServe(":"+Server.Port, router)
+	// secure false: only when http, don't use in production
+	//Csrf := csrf.Protect(securecookie.GenerateRandomKey(32),csrf.Secure(false))
+	http.ListenAndServe(":"+Server.Port, router) //Csrf(
 	//go http.ListenAndServeTLS(":"+Server.Port, "cert.pem", "key.pem", router)
 	/*
 		cfg := &tls.Config{
@@ -138,18 +140,19 @@ func SignUpHandler(w http.ResponseWriter, r *http.Request) {
 
 	fmt.Println("hashed password!")
 
-	err = Server.Database.ValidateSession()
-
-	fmt.Println("got through session validation!")
+	sessPtr, err := Server.Database.CreateSessionPtr()
+	defer sessPtr.Close()
 	if err != nil {
 		fmt.Println(err)
+		return
 	}
+
 	user := database.SignUpUser{
 		Email:    rawUserData.Email,
 		Username: rawUserData.Username,
 		Password: hashedPass,
 	}
-	userStatus, err := Server.Database.IsExistingUser(user)
+	userStatus, err := Server.Database.IsExistingUser(user, sessPtr)
 	if err != nil {
 		log.Printf("failed to check user in sign up. error: %+v", err)
 		return
@@ -163,7 +166,7 @@ func SignUpHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	Server.Database.InsertToCollection(database.TableUser, user)
+	Server.Database.InsertToCollection(database.TableUser, user, sessPtr)
 	fmt.Println("user inserted in database!")
 	EmailVerification(w, r, user)
 }
@@ -186,13 +189,20 @@ func SignOutHandler(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
-	err = SecureCookie.AuthenticateCookie(w, Server, cookie)
+	sessPtr, err := Server.Database.CreateSessionPtr()
+	defer sessPtr.Close()
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	err = SecureCookie.AuthenticateCookie(w, Server, cookie, sessPtr)
 	if err != nil {
 		fmt.Printf("main failed to delete cookie, err: %v", err)
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
-	Server.Database.DeleteCookie(cookie.Id)
+
+	Server.Database.DeleteCookie(cookie.Id, sessPtr)
 
 }
 
@@ -205,13 +215,25 @@ func CookieLoginHandler(w http.ResponseWriter, r *http.Request) {
 		fmt.Printf("unable to fetch cookie, err: %v\n", err)
 		return
 	}
-	err = SecureCookie.AuthenticateCookie(w, Server, cookie)
+	sessPtr, err := Server.Database.CreateSessionPtr()
+	defer sessPtr.Close()
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	err = SecureCookie.AuthenticateCookie(w, Server, cookie, sessPtr)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		fmt.Printf("\nunable to validate cookie, err: %v\n", err)
 		return
 	}
-	username := Server.Database.GetUsername(cookie.Id)
+	sessPtr, err = Server.Database.CreateSessionPtr()
+	defer sessPtr.Close()
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	username := Server.Database.GetUsername(cookie.Id, sessPtr)
 	w.Write([]byte(username))
 }
 
@@ -246,9 +268,11 @@ func ManualLoginHandler(w http.ResponseWriter, r *http.Request) {
 
 	hashedPass := app.ConvertPlainPassword(rawUserData.Username, rawUserData.Password)
 
-	err = Server.Database.ValidateSession()
+	sessPtr, err := Server.Database.CreateSessionPtr()
+	defer sessPtr.Close()
 	if err != nil {
 		fmt.Println(err)
+		return
 	}
 	user := database.LoginUser{
 		Username: rawUserData.Username,
@@ -256,10 +280,11 @@ func ManualLoginHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	var body []byte
 	body = []byte("login failed")
-	userDBId := Server.Database.AuthenticateUser(user)
+	userDBId := Server.Database.AuthenticateUser(user, sessPtr)
 	if userDBId != bson.ObjectId(0) {
 		body = []byte("login successful")
 		encoded := SecureCookie.CreateCookie(w, userDBId, r.URL.Path)
+		//w.Header().Set("X-CSRF-Token", csrf.Token(r))
 		if encoded == "" {
 			fmt.Println("failed to create cookie from main")
 			return
@@ -268,8 +293,8 @@ func ManualLoginHandler(w http.ResponseWriter, r *http.Request) {
 			Id:    userDBId,
 			Token: encoded,
 		}
-		Server.Database.DeleteCookie(dbCookie.Id)
-		Server.Database.InsertToCollection(database.TableCookie, dbCookie)
+		Server.Database.DeleteCookie(dbCookie.Id, sessPtr)
+		Server.Database.InsertToCollection(database.TableCookie, dbCookie, sessPtr)
 	}
 	w.Write(body)
 
@@ -277,9 +302,10 @@ func ManualLoginHandler(w http.ResponseWriter, r *http.Request) {
 
 func PostCommentHandler(w http.ResponseWriter, r *http.Request) {
 	// TODO Get topic id
-	err := Server.Database.ValidateSession()
+	sessPtr, err := Server.Database.CreateSessionPtr()
+	defer sessPtr.Close()
 	if err != nil {
-		fmt.Printf("unable to validate session, err: %v", err)
+		fmt.Println(err)
 		return
 	}
 	// TODO: should use unique postComment struct
@@ -302,7 +328,7 @@ func PostCommentHandler(w http.ResponseWriter, r *http.Request) {
 		fmt.Printf("unable to fetch cookie: %v", err)
 		return
 	}
-	username := Server.Database.GetUsername(cookie.Id)
+	username := Server.Database.GetUsername(cookie.Id, sessPtr)
 
 	comment := database.Comment{
 		Username: username,
@@ -319,37 +345,8 @@ func PostCommentHandler(w http.ResponseWriter, r *http.Request) {
 
 	}
 
-	Server.Database.InsertToCollection(database.TableComment, comment)
+	Server.Database.InsertToCollection(database.TableComment, comment, sessPtr)
 	// TODO få lagt den inn i topic?
 }
 
-func CreateCaptchaHandler(w http.ResponseWriter, r *http.Request) {
-
-	sessionId := captcha.New()
-	err := captcha.WriteImage(w, sessionId, 240, 80)
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-	}
-
-	/*if r.Method == http.MethodGet {
-		sessionID := app.CreateHash(string(time.Now().UnixNano()))
-		w.
-
-	} else if r.Method == http.MethodPost {
-		var signUpSession database.SignupSession
-		rBody, err := ioutil.ReadAll(r.Body)
-		if err != nil {
-			w.WriteHeader(http.StatusForbidden)
-			fmt.Printf("unable to read, err: %v", err)
-			return
-		}
-		err = json.Unmarshal(rBody, &signUpSession)
-		if err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-			fmt.Printf("unable to unmarshal, err: %v", err)
-			return
-		}
-	}
-	*/
-}
 
