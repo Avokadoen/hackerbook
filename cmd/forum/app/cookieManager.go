@@ -94,7 +94,7 @@ func (SCManager *SCManager) DeleteClientCookie(w http.ResponseWriter, urlString 
 			HttpOnly: true,
 			Domain:   u.Hostname(),
 			Expires:  time.Now(),
-			Secure: true,
+			Secure:   true,
 		}
 		fmt.Println("delete cookie")
 

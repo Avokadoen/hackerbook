@@ -57,6 +57,7 @@ func main() {
 	router.PathPrefix("/web/").Handler(http.StripPrefix("/web/", fs))
 
 	router.HandleFunc("/cookielogin", CookieLoginHandler).Methods(http.MethodPost)
+	router.HandleFunc("/verifyadmin", AuthenticateAdminHandler).Methods(http.MethodPost)
 	router.HandleFunc("/postlogin", ManualLoginHandler).Methods(http.MethodPost).Headers("Content-Type", "application/json")
 	router.HandleFunc("/signup", SignUpHandler).Methods(http.MethodPost).Headers("Content-Type", "application/json")
 	router.HandleFunc("/createcaptcha", CreateCaptchaHandler)

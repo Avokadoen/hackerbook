@@ -16,6 +16,7 @@ function tryCookieLogin(){
             loggedInUser = answer;
             loginClone = $("#login").clone();
             $('#login').html("You are logged in as " + loggedInUser  + "<input type=\"button\" onClick=\"handleSignout()\" value=\"Signout\">");
+            isAdmin();
         }
         $("div.login").show();
     }
@@ -40,6 +41,7 @@ function handleLogin(event){
             loggedInUser = event.username.value;
             loginClone = $("#login").clone();
             $('#login').html("You are logged in as " + event.username.value  + "<input type=\"button\" onClick=\"handleSignout()\" value=\"Signout\">");
+            isAdmin();
         }
     }
 }

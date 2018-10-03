@@ -27,9 +27,7 @@
     style:
     <p id="loginMessage"></p>
     <h1 class="center"><a href="/">HackerBook v2A.h</a></h1>
-    <h1 class="center">
-        {{ html .Name }}
-    </h1>
+    <h1 class="center"><a href="/r/{{ .Name }}">{{ html .Name }}</a></h1>
     <div class="center">
         <div class="topic" id={{with $x := urlquery .Title}}{{ printf "%.25s" $x }}{{end}}>
             <h2 class="noPad">{{ html .Topic.Title }}</h2>

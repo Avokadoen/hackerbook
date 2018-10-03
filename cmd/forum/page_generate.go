@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"html/template"
 	"net/http"
+	"regexp"
 
 	"github.com/globalsign/mgo/bson"
 	"github.com/gorilla/mux"
@@ -33,8 +34,16 @@ func GenerateCategoryPage(w http.ResponseWriter, r *http.Request) {
 
 	var category CategoryWithTopics
 	Server.Database.GetCategory(vars["category"], &category)
-	tmpl := template.Must(template.ParseFiles("./web/category.html"))
-	tmpl.Execute(w, category)
+
+	modulo := func(a, b int) int {
+		return a % b
+	}
+
+	tmpl := template.Must(template.New("category.html").Funcs(template.FuncMap{"mod": modulo}).ParseFiles("./web/category.html"))
+	err := tmpl.ExecuteTemplate(w, "category.html", category)
+	if err != nil {
+		fmt.Println(err)
+	}
 }
 
 func GenerateTopicPage(w http.ResponseWriter, r *http.Request) {
@@ -57,8 +66,10 @@ func GenerateTopicPage(w http.ResponseWriter, r *http.Request) {
 
 	markDowner := func(args ...interface{}) template.HTML {
 		unsafeMD := blackfriday.Run([]byte(fmt.Sprintf("%s", args...)))
-		safe := bluemonday.UGCPolicy().SanitizeBytes(unsafeMD)
-		return template.HTML(safe)
+		ugcPolicy := bluemonday.UGCPolicy()
+		ugcPolicy.AllowAttrs("class").Matching(regexp.MustCompile("^language-[a-zA-Z0-9]+$")).OnElements("code")
+		safeMD := ugcPolicy.SanitizeBytes(unsafeMD)
+		return template.HTML(safeMD)
 	}
 
 	tmpl := template.Must(template.New("topic.html").Funcs(template.FuncMap{"markdown": markDowner}).ParseFiles("./web/topic.html"))
@@ -75,5 +86,3 @@ func NotFoundHandler(w http.ResponseWriter, r *http.Request) {
 	tmpl := template.Must(template.ParseFiles("./web/no_content.html"))
 	tmpl.Execute(w, nil) //TODO: generating actual static pages is kinda bad...
 }
-
-//TODO add handlers for other typical Status****, i.e. 404?
