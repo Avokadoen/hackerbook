@@ -23,7 +23,6 @@ func AuthenticateAdmin(w http.ResponseWriter, r *http.Request) bson.ObjectId {
 	adminID := Server.Database.AuthenticateAdmin(cookie.Id)
 
 	if adminID != bson.ObjectId(0){
-		fmt.Printf("User is admin")
 		return adminID
 	} else{
 		fmt.Printf("User not admin, err: %v", err)
@@ -37,7 +36,7 @@ func AuthenticateAdminHandler(w http.ResponseWriter, r *http.Request) {
 
 	if adminID != bson.ObjectId(0){
 		w.Write([]byte("Admin granted"))
-		fmt.Printf("User is admin")
+		fmt.Printf("User is admin\n")
 	} else{
 		fmt.Printf("User not admin, err:")
 		w.WriteHeader(http.StatusUnauthorized)
