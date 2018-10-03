@@ -3,11 +3,12 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/dchest/captcha"
-	"github.com/globalsign/mgo/bson"
 	"io/ioutil"
 	"net/http"
 	"os"
+
+	"github.com/dchest/captcha"
+	"github.com/globalsign/mgo/bson"
 
 	"log"
 	"strings"
@@ -20,8 +21,8 @@ import (
 )
 
 /* sources:
-	https://www.thepolyglotdeveloper.com/2018/02/encrypt-decrypt-data-golang-application-crypto-packages/
-	https://www.kaihag.com/https-and-go/
+https://www.thepolyglotdeveloper.com/2018/02/encrypt-decrypt-data-golang-application-crypto-packages/
+https://www.kaihag.com/https-and-go/
 */
 func init() {
 	gotenv.Load("./cmd/forum/.env") //this path is relative to working dir upon go install
@@ -64,28 +65,30 @@ func main() {
 
 	router.HandleFunc("/r/{category}/{topicID}/comment", CreateNewComment).Methods(http.MethodPost)
 
+	router.NotFoundHandler = http.HandlerFunc(NotFoundHandler) //set 404 default handle
+
 	fmt.Printf("\nListening through port %v...\n", Server.Port)
 	http.ListenAndServe(":"+Server.Port, router)
 	//go http.ListenAndServeTLS(":"+Server.Port, "cert.pem", "key.pem", router)
 	/*
-	cfg := &tls.Config{
-		MinVersion:               tls.VersionTLS12,
-		CurvePreferences:         []tls.CurveID{tls.CurveP521, tls.CurveP384, tls.CurveP256},
-		PreferServerCipherSuites: true,
-		CipherSuites: []uint16{
-			tls.TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,
-			tls.TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA,
-			tls.TLS_RSA_WITH_AES_256_GCM_SHA384,
-			tls.TLS_RSA_WITH_AES_256_CBC_SHA,
-		},
-	}
-	srv := &http.Server{
-		Addr:         ":"+Server.Port,
-		Handler:      router,
-		TLSConfig:    cfg,
-		TLSNextProto: make(map[string]func(*http.Server, *tls.Conn, http.Handler), 0),
-	}
-	log.Fatal(srv.ListenAndServeTLS("server.crt", "server.key"))*/
+		cfg := &tls.Config{
+			MinVersion:               tls.VersionTLS12,
+			CurvePreferences:         []tls.CurveID{tls.CurveP521, tls.CurveP384, tls.CurveP256},
+			PreferServerCipherSuites: true,
+			CipherSuites: []uint16{
+				tls.TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,
+				tls.TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA,
+				tls.TLS_RSA_WITH_AES_256_GCM_SHA384,
+				tls.TLS_RSA_WITH_AES_256_CBC_SHA,
+			},
+		}
+		srv := &http.Server{
+			Addr:         ":"+Server.Port,
+			Handler:      router,
+			TLSConfig:    cfg,
+			TLSNextProto: make(map[string]func(*http.Server, *tls.Conn, http.Handler), 0),
+		}
+		log.Fatal(srv.ListenAndServeTLS("server.crt", "server.key"))*/
 }
 
 func SignUpHandler(w http.ResponseWriter, r *http.Request) {
@@ -261,11 +264,10 @@ func ManualLoginHandler(w http.ResponseWriter, r *http.Request) {
 
 }
 
-
-func PostCommentHandler (w http.ResponseWriter, r *http.Request){
+func PostCommentHandler(w http.ResponseWriter, r *http.Request) {
 	// TODO Get topic id
 	err := Server.Database.ValidateSession()
-	if err != nil{
+	if err != nil {
 		fmt.Printf("unable to validate session, err: %v", err)
 		return
 	}
@@ -293,7 +295,7 @@ func PostCommentHandler (w http.ResponseWriter, r *http.Request){
 
 	comment := database.Comment{
 		Username: username,
-		Text: commentRaw.Text,		// TODO hent den her fra r på en måte
+		Text:     commentRaw.Text, // TODO hent den her fra r på en måte
 	}
 
 	if valid, err := validator.ValidateStruct(comment); !valid {
@@ -310,14 +312,13 @@ func PostCommentHandler (w http.ResponseWriter, r *http.Request){
 	// TODO få lagt den inn i topic?
 }
 
-func CreateCaptchaHandler (w http.ResponseWriter, r *http.Request){
+func CreateCaptchaHandler(w http.ResponseWriter, r *http.Request) {
 
 	sessionId := captcha.New()
 	err := captcha.WriteImage(w, sessionId, 240, 80)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 	}
-
 
 	/*if r.Method == http.MethodGet {
 		sessionID := app.CreateHash(string(time.Now().UnixNano()))
@@ -338,5 +339,5 @@ func CreateCaptchaHandler (w http.ResponseWriter, r *http.Request){
 			return
 		}
 	}
-*/
+	*/
 }

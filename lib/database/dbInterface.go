@@ -1,14 +1,13 @@
 package database
 
 import (
-	"encoding/json"
 	"fmt"
-	"github.com/globalsign/mgo/bson"
 	"log"
 	"os"
 	"strings"
 
 	"github.com/globalsign/mgo"
+	"github.com/globalsign/mgo/bson"
 	// mgo "gopkg.in/mgo.v2"
 )
 
@@ -23,7 +22,7 @@ const (
 	TableEmailToken = "eToken"
 )
 
-type Db interface {
+type Db interface { //TODO: split interface on type of access
 	InitState()
 	CreateSession() error
 	ValidateSession() error
@@ -34,9 +33,11 @@ type Db interface {
 	GetCookie(cookie CookieData, entry *CookieData)
 	DeleteCookie(id bson.ObjectId)
 	GetUsername(id bson.ObjectId) string
-	GetCategories(categories interface{})
-	GetCategory(categoryName string, category interface{})
-	GetTopic(categoryName string, topicID string, topic interface{})
+	GetCategories(categories interface{}) error
+	GetCategory(categoryName string, category interface{}) error
+	GetTopic(categoryName string, topicID string, topic interface{}) error
+	CreateTopic(categoryName string, topic Topic) error
+	PushTopicComment(topicID string, comment Comment) error
 }
 
 type DbState struct {
@@ -70,22 +71,17 @@ type CookieData struct {
 }
 
 type Topic struct {
-	CategoryID        string `bson:"_id,omitempty" valid:"-, optional"`
-	Username          string `json:"username" valid:"alphanum, required"`
-	TopicName         string `json:"username" valid:"alphanum, required"`
-	Text              string `json:"text" valid:"alphanum, required"`
-	commentCollection []Comment
+	Id       bson.ObjectId `bson:"_id" valid:"-, required"`
+	Category string        `json:"name" valid:"alphanum, required"`
+	Username string        `json:"username" valid:"alphanum, required"`
+	Title    string        `json:"title" valid:"utfletternum, required"`
+	Content  string        `json:"content" valid:"utfletternum, required"`
 }
 
 type Comment struct {
 	CommentID bson.ObjectId `bson:"_id,omitempty" valid:"-, optional"`
 	Username  string        `json:"username" valid:"alphanum, required"`
-	Text      string        `json:"text" valid:"alphanum, required"`
-}
-
-type SignupSession struct {
-	SignupID  string        `json:"signupid" valid:"alphanum, required"`
-	Answer    string        `json:"answer" valid:"alphanum, required"`
+	Text      string        `json:"text" valid:"utfletternum, required"`
 }
 
 func (db *DbState) InitState() {
@@ -264,7 +260,10 @@ func (db *DbState) DeleteCookie(id bson.ObjectId) {
 }
 
 func (db *DbState) GetUsername(id bson.ObjectId) string {
-	user := LoginUser{}
+	if err := db.ValidateSession(); err != nil {
+		fmt.Println(err)
+	}
+	user := LoginUser{Username: "<bad boi>"}
 	collection := db.getCollection(TableUser)
 	err := collection.FindId(bson.ObjectIdHex(id.Hex())).One(&user)
 	if err != nil {
@@ -274,13 +273,16 @@ func (db *DbState) GetUsername(id bson.ObjectId) string {
 }
 
 //TODO sepparate into other file
-func (db *DbState) GetCategories(categories interface{}) {
-	db.ValidateSession()
-	db.getCollection(TableCategory).Find(nil).All(categories)
+func (db *DbState) GetCategories(categories interface{}) error {
+	if err := db.ValidateSession(); err != nil {
+		return err
+	}
+	return db.getCollection(TableCategory).Find(nil).All(categories)
 }
-func (db *DbState) GetCategory(categoryName string, category interface{}) {
-	db.ValidateSession()
-
+func (db *DbState) GetCategory(categoryName string, category interface{}) error {
+	if err := db.ValidateSession(); err != nil {
+		return err
+	}
 	pipe := db.getCollection(TableCategory).Pipe(
 		[]bson.M{
 			{"$match": bson.M{"name": bson.M{"$eq": categoryName}}},
@@ -294,17 +296,13 @@ func (db *DbState) GetCategory(categoryName string, category interface{}) {
 			},
 		},
 	)
-	err := pipe.One(category)
-	if err != nil {
-		fmt.Printf(err.Error())
-		return
-	}
-	fmt.Printf("\n\n%+v\n\n", category)
+	return pipe.One(category)
 }
 
-func (db *DbState) GetTopic(categoryName string, topicID string, topic interface{}) {
-	db.ValidateSession()
-
+func (db *DbState) GetTopic(categoryName string, topicID string, topic interface{}) error {
+	if err := db.ValidateSession(); err != nil {
+		return err
+	}
 	pipeline := []bson.M{
 		{"$unwind": "$topics"},
 		{"$match": bson.M{"name": bson.M{"$eq": categoryName}, "topics": bson.M{"$eq": bson.ObjectIdHex(topicID)}}},
@@ -318,28 +316,29 @@ func (db *DbState) GetTopic(categoryName string, topicID string, topic interface
 		{"$project": bson.M{"topics": 0}},
 		{"$unwind": "$topic"},
 	}
-	/*
-	   	RESULTS IN THIS KIND OF STRUCTURE
-	   {
-	   	Id:ObjectIdHex("5bb175765499851637a9379d")
-	   	Name:phishing
-	   	Topic:{
-	   		Id:ObjectIdHex("5bb177bc5499851637a9379e")
-	   		Title:Test Post Pls Ignore
-	   		Content:test ok
-	   		Comments:[]
-	   		CreatedBy:ObjectIdHex("")
-	   	}
-	   }
-	*/
-
-	b, err := json.MarshalIndent(pipeline, "", "  ")
-	if err != nil {
-		fmt.Printf("%+v\n", pipeline)
-	}
-	fmt.Print(string(b))
-
-	//The following line does not validate against category... which might not really be an issue
 	pipe := db.getCollection(TableCategory).Pipe(pipeline)
-	pipe.One(topic)
+	return pipe.One(topic)
+}
+
+func (db *DbState) PushTopicComment(topicID string, comment Comment) error {
+	if err := db.ValidateSession(); err != nil {
+		return err
+	}
+	selector := bson.M{"_id": bson.ObjectIdHex(topicID)}
+
+	update := bson.M{"$push": bson.M{"comments": bson.M{"$each": []Comment{comment}}}}
+
+	return db.getCollection(TableTopic).Update(selector, update)
+}
+func (db *DbState) CreateTopic(categoryName string, topic Topic) error {
+	if err := db.ValidateSession(); err != nil {
+		return err
+	}
+	topic.Id = bson.NewObjectId()
+	db.InsertToCollection(TableTopic, topic)
+
+	selector := bson.M{"name": categoryName}
+	update := bson.M{"$push": bson.M{"topics": bson.M{"$each": []bson.ObjectId{topic.Id}}}}
+
+	return db.getCollection(TableCategory).Update(selector, update)
 }

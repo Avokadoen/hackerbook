@@ -9,15 +9,15 @@ function postTopic(event){
         req.send(JSON.stringify({
             username: loggedInUser, //Fetch username somehow
             title: event.title.value,
-            text: event.topicInput.value
+            content: event.topicInput.value
         }));
 
 
         req.onload = function() {
             answer = this.responseText;
             document.getElementById("postedTopicMessage").innerHTML = answer;
-            if(answer === "Topic posted"){ //If successful, display message
-
+            if(req.status == 201) { //if StatusCreated
+                location.reload(true) //reload, force new GET request, i.e. don't use cache
             }
         }
     }

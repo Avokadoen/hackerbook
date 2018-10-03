@@ -8,16 +8,15 @@ function postComment(event){
         req.setRequestHeader('Content-Type', 'application/json');
         req.send(JSON.stringify({
             username: loggedInUser, //Fetch username somehow
-            comment: event.commentInput.value
-
+            text: event.commentInput.value
         }));
 
 
         req.onload = function() {
             answer = this.responseText;
             document.getElementById("commentMessage").innerHTML = answer;
-            if(answer === "Comment posted"){ //If successful, display message
-
+            if(req.status == 201) { //if StatusCreated
+                location.reload(true) //reload, force new GET request, i.e. don't use cache
             }
         }
     }

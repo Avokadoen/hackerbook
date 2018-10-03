@@ -41,9 +41,15 @@
         <input type="button" onClick="postTopicVisible()" value="Create new topic">
         <ul>
             {{range .Topics}}
-            <h2 class="noPad"><a href="/r/{{ $.Name }}/{{ .Id.Hex }}#{{ urlquery .Title }}">{{ html .Title }}</h2>
-            <h5 class="noPad">{{ .CreatedBy.Hex }}</h5>
-            <h5 class="noPad">{{ len .Comments }}</h5>
+                <div>
+                <h2 class="noPad"><a href="/r/{{ $.Name }}/{{ .Id.Hex }}#{{with $x := urlquery .Title}}{{ printf "%.25s" $x }}{{end}}">{{ html .Title }}</a></h2>
+                </br>
+                <h4 class="noPad"><i>{{with $x := html .Content | printf "%.100s"}}{{$x}}...{{end}}</i></h4>
+                </br>
+                <h5 class="noPad">{{ len .Comments }} Comments</h5>
+                <h5 class="noPad">by {{.Username }}</h5>
+                <hr size="1">
+                </div>
             {{end}}
         </ul>
     </div>
