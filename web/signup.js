@@ -25,7 +25,7 @@ function handleSignup(event){
             password:   event.password.value,
             captcha:   grecaptcha.getResponse()
         }));
-        
+
             req.onload = function() {
             answer = this.responseText;
             document.getElementById("errorMessage").innerHTML = answer;
