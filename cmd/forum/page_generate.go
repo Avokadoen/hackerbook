@@ -17,11 +17,22 @@ type HomePage struct {
 }
 
 func GenerateHomePage(w http.ResponseWriter, r *http.Request) {
+
+	sessPtr, err := Server.Database.CreateSessionPtr()
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	defer sessPtr.Close()
 	w.Header().Add("Strict-Transport-Security", "max-age=63072000; includeSubDomains")
 	fmt.Println("Generating Home Page")
 	var categories []Category
-	Server.Database.GetCategories(&categories)
-	//TODO: get stuff from DB... for now I'll use mocked data
+	err = Server.Database.GetCategories(&categories, sessPtr)
+	if err != nil {
+		fmt.Println(err)
+		//return
+	}
+
 	tmpl := template.Must(template.ParseFiles("./web/index.html"))
 	data := HomePage{categories}
 
@@ -29,21 +40,31 @@ func GenerateHomePage(w http.ResponseWriter, r *http.Request) {
 }
 
 func GenerateCategoryPage(w http.ResponseWriter, r *http.Request) {
+
+	sessPtr, err := Server.Database.CreateSessionPtr()
+	defer sessPtr.Close()
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
 	fmt.Println("Generating Category Page")
 	vars := mux.Vars(r) //use vars to obtain data from db
 
 	var category CategoryWithTopics
-	Server.Database.GetCategory(vars["category"], &category)
+
+	Server.Database.GetCategory(vars["category"], &category, sessPtr)
 
 	modulo := func(a, b int) int {
 		return a % b
 	}
 
 	tmpl := template.Must(template.New("category.html").Funcs(template.FuncMap{"mod": modulo}).ParseFiles("./web/category.html"))
-	err := tmpl.ExecuteTemplate(w, "category.html", category)
+	err = tmpl.ExecuteTemplate(w, "category.html", category)
 	if err != nil {
 		fmt.Println(err)
 	}
+
 }
 
 func GenerateTopicPage(w http.ResponseWriter, r *http.Request) {
@@ -57,7 +78,14 @@ func GenerateTopicPage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	Server.Database.GetTopic(vars["category"], vars["topicID"], &topic)
+	sessPtr, err := Server.Database.CreateSessionPtr()
+	defer sessPtr.Close()
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	Server.Database.GetTopic(vars["category"], vars["topicID"], &topic, sessPtr)
 
 	if topic.Name == "" {
 		NotFoundHandler(w, r)
@@ -73,7 +101,7 @@ func GenerateTopicPage(w http.ResponseWriter, r *http.Request) {
 	}
 
 	tmpl := template.Must(template.New("topic.html").Funcs(template.FuncMap{"markdown": markDowner}).ParseFiles("./web/topic.html"))
-	err := tmpl.ExecuteTemplate(w, "topic.html", topic)
+	err = tmpl.ExecuteTemplate(w, "topic.html", topic)
 	if err != nil {
 		fmt.Println(err)
 	}

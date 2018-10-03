@@ -14,13 +14,20 @@ func AuthenticateAdmin(w http.ResponseWriter, r *http.Request) bson.ObjectId {
 		return bson.ObjectId(0)
 	}
 
-	SecureCookie.AuthenticateCookie(w, Server, cookie)
+	sessPtr, err := Server.Database.CreateSessionPtr()
+	defer sessPtr.Close()
+	if err != nil {
+		fmt.Println(err)
+		return bson.ObjectId(0)
+	}
+
+	SecureCookie.AuthenticateCookie(w, Server, cookie, sessPtr)
 	if err != nil {
 		fmt.Printf("Failed to authenticate cookie, err: %v", err)
 		return bson.ObjectId(0)
 	}
 
-	adminID := Server.Database.AuthenticateAdmin(cookie.Id)
+	adminID := Server.Database.AuthenticateAdmin(cookie.Id, sessPtr)
 
 	if adminID != bson.ObjectId(0){
 		return adminID

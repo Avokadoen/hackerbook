@@ -2,6 +2,7 @@ package app
 
 import (
 	"fmt"
+	"github.com/globalsign/mgo"
 	"net/http"
 	"net/url"
 	"time"
@@ -20,9 +21,9 @@ type CookieManager interface {
 	FetchCookie(r *http.Request) database.CookieData
 	CreateCookie(w http.ResponseWriter, m bson.ObjectId, urlString string) string
 	DeleteClientCookie(w http.ResponseWriter, urlString string) string
-	DeleteDBCookie(clientCookie database.CookieData) error
-	DecodeDBCookieData(data database.CookieData) database.CookieData
-	AuthenticateCookie(w http.ResponseWriter, Server *Server, clientCookie database.CookieData) error
+	DeleteDBCookie(clientCookie database.CookieData, session *mgo.Session) error
+	DecodeDBCookieData(data database.CookieData, session *mgo.Session) database.CookieData
+	AuthenticateCookie(w http.ResponseWriter, Server *Server, clientCookie database.CookieData, session *mgo.Session) error
 }
 
 // TODO: we need to recreate securecookie if it is nil
@@ -104,23 +105,23 @@ func (SCManager *SCManager) DeleteClientCookie(w http.ResponseWriter, urlString 
 	return fmt.Errorf("failed to delete client cookie")
 }
 
-func (SCManager *SCManager) DeleteDBCookie(clientCookie database.CookieData, Server *Server) error {
+func (SCManager *SCManager) DeleteDBCookie(clientCookie database.CookieData, Server *Server, session *mgo.Session) error {
 	if len(clientCookie.Token) <= 0 {
 		return fmt.Errorf("invalid token in cookie")
 	}
 	encodedDbCookie := new(database.CookieData)
 
-	Server.Database.GetCookie(clientCookie, encodedDbCookie)
-	dbData := SCManager.DecodeDBCookieData(*encodedDbCookie)
+	Server.Database.GetCookie(clientCookie, encodedDbCookie, session)
+	dbData := SCManager.DecodeDBCookieData(*encodedDbCookie, session)
 
 	if dbData != clientCookie {
 		return fmt.Errorf("clientCookie did not match db")
 	}
-	Server.Database.DeleteCookie(dbData.Id)
+	Server.Database.DeleteCookie(dbData.Id, session)
 	return nil
 }
 
-func (SCManager *SCManager) DecodeDBCookieData(data database.CookieData) database.CookieData {
+func (SCManager *SCManager) DecodeDBCookieData(data database.CookieData, session *mgo.Session) database.CookieData {
 
 	decodeData := database.CookieData{}
 	err := SCManager.secureCoIns.Decode(database.CookieName, data.Token, &decodeData)
@@ -131,14 +132,14 @@ func (SCManager *SCManager) DecodeDBCookieData(data database.CookieData) databas
 	return decodeData
 }
 
-func (SCManager *SCManager) AuthenticateCookie(w http.ResponseWriter, Server *Server, clientCookie database.CookieData) error {
+func (SCManager *SCManager) AuthenticateCookie(w http.ResponseWriter, Server *Server, clientCookie database.CookieData, session *mgo.Session) error {
 	if len(clientCookie.Token) <= 0 {
 		return fmt.Errorf("invalid token in cookie")
 	}
 	encodedDbCookie := new(database.CookieData)
 
-	Server.Database.GetCookie(clientCookie, encodedDbCookie)
-	dbData := SCManager.DecodeDBCookieData(*encodedDbCookie)
+	Server.Database.GetCookie(clientCookie, encodedDbCookie, session)
+	dbData := SCManager.DecodeDBCookieData(*encodedDbCookie, session)
 
 	if dbData != clientCookie {
 		return fmt.Errorf("clientCookie did not match db")
