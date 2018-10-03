@@ -33,7 +33,7 @@
     <div class="center">
         <div class="topic" id={{with $x := urlquery .Title}}{{ printf "%.25s" $x }}{{end}}>
             <h2 class="noPad">{{ html .Topic.Title }}</h2>
-            <h5 class="noPad">{{ html .Topic.Username }}</h5>
+            <h5 class="noPad">By <i>{{ html .Topic.Username }}</i></h5>
             <p>{{ .Topic.Content | markdown }}</p>
         </div>
         {{ range .Topic.Comments }}

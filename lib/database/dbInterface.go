@@ -1,7 +1,6 @@
 package database
 
 import (
-	"encoding/json"
 	"fmt"
 	"log"
 	"os"
@@ -67,7 +66,7 @@ type LoginUser struct {
 }
 
 type CookieData struct {
-	Id    bson.ObjectId `bson:"_id" valid:"-, required"`
+	Id    bson.ObjectId `json:"id" valid:"-, required"`
 	Token string        `json:"token" valid:"alphanum, required"`
 }
 
@@ -259,28 +258,6 @@ func (db *DbState) GetTopic(categoryName string, topicID string, topic interface
 		{"$project": bson.M{"topics": 0}},
 		{"$unwind": "$topic"},
 	}
-	/*
-	   	RESULTS IN THIS KIND OF STRUCTURE
-	   {
-	   	Id:ObjectIdHex("5bb175765499851637a9379d")
-	   	Name:phishing
-	   	Topic:{
-	   		Id:ObjectIdHex("5bb177bc5499851637a9379e")
-	   		Title:Test Post Pls Ignore
-	   		Content:test ok
-	   		Comments:[]
-	   		CreatedBy:ObjectIdHex("")
-	   	}
-	   }
-	*/
-
-	b, err := json.MarshalIndent(pipeline, "", "  ")
-	if err != nil {
-		fmt.Printf("%+v\n", pipeline)
-	}
-	fmt.Print(string(b))
-
-	//The following line does not validate against category... which might not really be an issue
 	pipe := db.getCollection(TableCategory).Pipe(pipeline)
 	return pipe.One(topic)
 }

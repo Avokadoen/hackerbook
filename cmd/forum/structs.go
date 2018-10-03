@@ -37,7 +37,7 @@ type TopicAndCategory struct {
 }
 
 //Topic within a category
-type Topic struct {
+type Topic struct { //TODO unify with database structs
 	Id       bson.ObjectId `bson:"_id,omitempty"`
 	Title    string        `json:"title"`
 	Content  string        `json:"content"`

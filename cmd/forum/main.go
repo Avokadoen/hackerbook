@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 
+	"github.com/dchest/captcha"
 	"github.com/globalsign/mgo/bson"
 
 	"log"
@@ -48,8 +49,10 @@ func main() {
 	router.HandleFunc("/cookielogin", CookieLoginHandler).Methods(http.MethodPost)
 	router.HandleFunc("/postlogin", ManualLoginHandler).Methods(http.MethodPost).Headers("Content-Type", "application/json")
 	router.HandleFunc("/signup", SignUpHandler).Methods(http.MethodPost).Headers("Content-Type", "application/json")
+	router.HandleFunc("/createcaptcha", CreateCaptchaHandler)
 	router.HandleFunc("/postcomment", PostCommentHandler).Methods(http.MethodPost).Headers("Content-Type", "application/json")
 	router.HandleFunc("/signout", SignOutHandler).Methods(http.MethodPost).Headers("Content-Type", "application/json")
+
 	//router.HandleFunc("/signup", SignUpHandler).Methods(http.MethodGet)
 
 	// router.HandleFunc("/", fs.ServeHTTP)
@@ -307,4 +310,34 @@ func PostCommentHandler(w http.ResponseWriter, r *http.Request) {
 
 	Server.Database.InsertToCollection(database.TableComment, comment)
 	// TODO få lagt den inn i topic?
+}
+
+func CreateCaptchaHandler(w http.ResponseWriter, r *http.Request) {
+
+	sessionId := captcha.New()
+	err := captcha.WriteImage(w, sessionId, 240, 80)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+	}
+
+	/*if r.Method == http.MethodGet {
+		sessionID := app.CreateHash(string(time.Now().UnixNano()))
+		w.
+
+	} else if r.Method == http.MethodPost {
+		var signUpSession database.SignupSession
+		rBody, err := ioutil.ReadAll(r.Body)
+		if err != nil {
+			w.WriteHeader(http.StatusForbidden)
+			fmt.Printf("unable to read, err: %v", err)
+			return
+		}
+		err = json.Unmarshal(rBody, &signUpSession)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			fmt.Printf("unable to unmarshal, err: %v", err)
+			return
+		}
+	}
+	*/
 }

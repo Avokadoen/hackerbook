@@ -10,6 +10,7 @@
 </head>
 <body>
 <div class="center">
+    <script>generateCaptcha()</script>
     <form class="signUp" action="JavaScript:handleSignup()">
         Username:
         <input id="usernameInput" type="text" name="username" value="">
@@ -26,6 +27,12 @@
         Confirm Password:
         <input id="confirmPasswordInput" type="password" name="passwordConfirm" value="">
         <p id="confirmPasswordMessage"></p>
+        </br>
+        To ensure you are a human:
+        <img id="captchaIMG" src="" width="240" height="80">
+        </br>
+        <input id="captchaInput" type="text" name="captcha" value="">
+        <p id="captchaMessage"></p>
         </br>
         <input type="Button" onClick="handleSignup(this.form)" value="SignUp">
         <p id="errorMessage"></p>
