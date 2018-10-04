@@ -77,6 +77,7 @@ func main() {
 	router.HandleFunc("/r/{category}/newtopic", CreateNewTopic).Methods(http.MethodPost)
 	router.HandleFunc("/r/{category}/{topicID}", GenerateTopicPage).Methods(http.MethodGet)
 	router.HandleFunc("/r/{category}/{topicID}/comment", CreateNewComment).Methods(http.MethodPost)
+	router.HandleFunc("/admincreatenewcategory", CreateNewCategoryHandler).Methods(http.MethodPost)
 	router.NotFoundHandler = http.HandlerFunc(NotFoundHandler) //set 404 default handle
 
 	fmt.Printf("\nListening through port %v...\n", Server.Port)

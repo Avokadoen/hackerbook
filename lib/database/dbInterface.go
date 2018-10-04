@@ -43,6 +43,7 @@ type Db interface { //TODO: split interface on type of access
 	GetUsername(id bson.ObjectId, session *mgo.Session) string
 	GetCategories(categories interface{}, session *mgo.Session) error
 	GetCategory(categoryName string, category interface{}, session *mgo.Session) error
+	IsExistingCategory(categoryName string, session *mgo.Session) bool
 	GetTopic(categoryName string, topicID string, topic interface{}, session *mgo.Session) error
 	CreateTopic(categoryName string, topic Topic, session *mgo.Session) error
 	PushTopicComment(topicID string, comment Comment, session *mgo.Session) error
@@ -83,6 +84,18 @@ type CookieData struct {
 	Id    bson.ObjectId `json:"userid" valid:"-, required"`
 	Token string        `json:"token" valid:"alphanum, required"`
 }
+
+type Category struct {
+	Id     bson.ObjectId   `bson:"_id,omitempty"`
+	Name   string          `json:"name"`
+	Topics []bson.ObjectId `json:"topics"`
+	//MORE?
+}
+
+/*type Category struct {
+	Id       bson.ObjectId `bson:"_id,omitempty" valid:"-, optional"`
+	Name	 string		   `json:"name" valid:"alphanum, required"`
+}*/
 
 type Topic struct {
 	Id       bson.ObjectId `bson:"_id" valid:"-, optional"`
@@ -348,6 +361,31 @@ func (db *DbState) GetCategory(categoryName string, category interface{}, sessio
 		},
 	)
 	return pipe.One(category)
+}
+
+func (db *DbState) IsExistingCategory(categoryName string, session *mgo.Session) bool {
+	if session == nil {
+		fmt.Printf("session was nil")
+		return true
+	}
+
+	collection := db.getCollection(TableCategory, session)
+
+	//TODO: Fix find function? It says category already exists?
+	count, err := collection.Find(bson.M{"name": categoryName}).Count()
+	if err != nil {
+		log.Printf("Category doesn't exist, err?: %+v", err)
+		return true
+	}
+
+	if count > 0 {
+		fmt.Printf("Category already exists!")
+		return true
+	} else {
+		fmt.Printf("Category doesn't exist")
+		return false
+	}
+
 }
 
 func (db *DbState) GetTopic(categoryName string, topicID string, topic interface{}, session *mgo.Session) error {

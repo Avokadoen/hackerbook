@@ -17,7 +17,7 @@ function postComment(event, replyRef = -1){
             answer = this.responseText;
             document.getElementById("commentMessage-"+replyRef).innerHTML = answer;
             if(req.status == 201) { //if StatusCreated
-                location.reload(true) //reload, force new GET request, i.e. don't use cache
+                location.reload(true); //reload, force new GET request, i.e. don't use cache
             }
         }
     }

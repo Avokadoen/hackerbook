@@ -17,7 +17,7 @@ function isAdmin(){
 
 function createNewCategory(event){
     var req = new XMLHttpRequest();
-    req.open("POST", "/createNewCategory", true);
+    req.open("POST", "/admincreatenewcategory", true);
     req.setRequestHeader('Content-Type', 'application/json');
     req.send(JSON.stringify({
         category:      event.category.value
@@ -26,8 +26,11 @@ function createNewCategory(event){
 
     req.onload = function() {
         answer = this.responseText;
-        if(answer === "") {
-
+        if(answer === "Category inserted") {
+            location.reload(true);
+        }
+        else {
+            document.getElementById("AdminErrorMessage").innerHTML = "Was not able to create new category";
         }
     }
 }
