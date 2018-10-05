@@ -26,7 +26,7 @@ const (
 const (
 	// COOKIE CONST
 	CookieName       = "HackerBook"
-	CookieExpiration = time.Hour
+	CookieExpiration = time.Hour * 24
 )
 
 type Db interface { //TODO: split interface on type of access
