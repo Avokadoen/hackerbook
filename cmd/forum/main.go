@@ -83,7 +83,7 @@ func main() {
 	fmt.Printf("\nListening through port %v...\n", Server.Port)
 	// secure false: only when http, don't use in production
 	//Csrf := csrf.Protect(securecookie.GenerateRandomKey(32),csrf.Secure(false))
-	http.ListenAndServe(":"+Server.Port, router) //Csrf(
+	log.Fatal(http.ListenAndServe(":"+Server.Port, router)) //Csrf(
 	//go http.ListenAndServeTLS(":"+Server.Port, "cert.pem", "key.pem", router)
 	/*
 		cfg := &tls.Config{
