@@ -60,3 +60,8 @@
 [prune]
   go-tests = true
   unused-packages = true
+
+[metadata.heroku]
+  root-package = "gitlab.com/avokadoen/softsecoblig2"
+  go-version = "1.11"
+  install = [ "./..." ]
