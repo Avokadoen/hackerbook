@@ -57,7 +57,7 @@ type DbState struct {
 }
 
 type SignUpUser struct {
-	Id       bson.ObjectId `bson:"_id,omitempty" valid:"-, optional"`
+	Id       bson.ObjectId `bson:"_id,omitempty" valid:"-"`
 	Email    string        `json:"email" valid:"email, required"`
 	Username string        `json:"username" valid:"alphanum, required"`
 	Password string        `json:"password" valid:"alphanum, required"`
@@ -65,7 +65,7 @@ type SignUpUser struct {
 }
 
 type AdminUser struct {
-	Id     bson.ObjectId `bson:"_id,omitempty" valid:"-, optional"`
+	Id     bson.ObjectId `bson:"_id,omitempty" valid:"-"`
 	UserID bson.ObjectId `json:"userID" valid:"-, required"`
 }
 
@@ -97,7 +97,7 @@ type Category struct {
 }*/
 
 type Topic struct {
-	Id       bson.ObjectId `bson:"_id" valid:"-, optional"`
+	Id       bson.ObjectId `bson:"_id" valid:"-"`
 	Category string        `json:"name" valid:"alphanum, required"`
 	Username string        `json:"username" valid:"alphanum, required"`
 	Title    string        `json:"title" valid:"printableascii, required"`
@@ -105,10 +105,10 @@ type Topic struct {
 }
 
 type Comment struct {
-	CommentID bson.ObjectId `bson:"_id,omitempty" valid:"-, optional"`
+	CommentID bson.ObjectId `bson:"_id,omitempty" valid:"-"`
 	Username  string        `json:"username" valid:"alphanum, required"`
 	Text      string        `json:"text" valid:"halfwidth"`
-	ReplyTo   int           `json:"replyto" valid:"int, optional"`
+	ReplyTo   int           `json:"replyto" valid:"-"`
 }
 
 func (db *DbState) InitState() {
@@ -117,11 +117,11 @@ func (db *DbState) InitState() {
 	db.Username = os.Getenv("DBUSERNAME")
 	db.Password = os.Getenv("DBPASSWORD")
 
-	// TODO: do not log this
-	log.Printf("%+v\n", db.Hosts)
+	// 
+	/*log.Printf("%+v\n", db.Hosts)
 	log.Printf("%+v\n", db.DbName)
 	log.Printf("%+v\n", db.Username)
-	log.Printf("%+v\n", db.Password)
+	log.Printf("%+v\n", db.Password)*/
 }
 
 func (db *DbState) CreateMainSession() (err error) {
