@@ -1,1 +1,1 @@
-web: main.go
+web: go run ./cmd/forum/
