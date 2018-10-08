@@ -3,18 +3,20 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/globalsign/mgo/bson"
 	"io/ioutil"
 	"net/http"
 	"os"
 	"strings"
+
+	"github.com/globalsign/mgo/bson"
+
+	"log"
 
 	validator "github.com/asaskevich/govalidator"
 	"github.com/gorilla/mux"
 	"github.com/subosito/gotenv"
 	"gitlab.com/avokadoen/softsecoblig2/cmd/forum/app"
 	"gitlab.com/avokadoen/softsecoblig2/lib/database"
-	"log"
 )
 
 //var (
@@ -69,20 +71,22 @@ func main() {
 	router.HandleFunc("/cookielogin", CookieLoginHandler).Methods(http.MethodPost)
 	router.HandleFunc("/verifyadmin", AuthenticateAdminHandler).Methods(http.MethodPost)
 	router.HandleFunc("/postlogin", ManualLoginHandler).Methods(http.MethodPost).Headers("Content-Type", "application/json")
-	router.HandleFunc("/signup", SignUpHandler).Methods(http.MethodPost).Headers("Content-Type", "application/json")
+	router.HandleFunc("/create_new_user", SignUpHandler).Methods(http.MethodPost).Headers("Content-Type", "application/json")
 	router.HandleFunc("/postcomment", PostCommentHandler).Methods(http.MethodPost).Headers("Content-Type", "application/json")
 	router.HandleFunc("/signout", SignOutHandler).Methods(http.MethodPost).Headers("Content-Type", "application/json")
+	router.HandleFunc("/admincreatenewcategory", CreateNewCategoryHandler).Methods(http.MethodPost)
 
 	//router.HandleFunc("/signup", SignUpHandler).Methods(http.MethodGet)
 
 	// router.HandleFunc("/", fs.ServeHTTP)
 	// PAGE HANDLES
+
 	router.HandleFunc("/", GenerateHomePage)
+	router.HandleFunc("/signup", GenerateSignupPage)
 	router.HandleFunc("/r/{category}", GenerateCategoryPage)
 	router.HandleFunc("/r/{category}/newtopic", CreateNewTopic).Methods(http.MethodPost)
 	router.HandleFunc("/r/{category}/{topicID}", GenerateTopicPage).Methods(http.MethodGet)
 	router.HandleFunc("/r/{category}/{topicID}/comment", CreateNewComment).Methods(http.MethodPost)
-	router.HandleFunc("/admincreatenewcategory", CreateNewCategoryHandler).Methods(http.MethodPost)
 	router.NotFoundHandler = http.HandlerFunc(NotFoundHandler) //set 404 default handle
 
 	log.Printf("\nListening through port %v...\n", Server.Port)
@@ -110,6 +114,7 @@ func main() {
 		}
 		log.Fatal(srv.ListenAndServeTLS("server.crt", "server.key"))*/
 }
+
 /*
 func SetLogger() *log.Logger { // Testing setting new loggers.
 	errorLog, err := os.OpenFile("info.log", os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0644)
@@ -225,7 +230,7 @@ func SignOutHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	Server.Database.DeleteCookie(cookie.Id, sessPtr)
+	Server.Database.DeleteCookie(cookie.ID, sessPtr)
 
 }
 
@@ -256,7 +261,7 @@ func CookieLoginHandler(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
-	username := Server.Database.GetUsername(cookie.Id, sessPtr)
+	username := Server.Database.GetUsername(cookie.ID, sessPtr)
 	w.Write([]byte(username))
 }
 
@@ -312,11 +317,12 @@ func ManualLoginHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		dbCookie := database.CookieData{
-			Id:    userDBId,
+			ID:    userDBId,
 			Token: encoded,
 		}
+
 		// TODO: only delete cookie that is related to this specific hardware with this user
-		Server.Database.DeleteCookie(dbCookie.Id, sessPtr) // delete old invalid cookies
+		Server.Database.DeleteCookie(dbCookie.ID, sessPtr) // delete old invalid cookies
 		Server.Database.InsertToCollection(database.TableCookie, dbCookie, sessPtr)
 	}
 	w.Write(body)
@@ -349,7 +355,7 @@ func PostCommentHandler(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
-	username := Server.Database.GetUsername(cookie.Id, sessPtr)
+	username := Server.Database.GetUsername(cookie.ID, sessPtr)
 
 	comment := database.Comment{
 		Username: username,

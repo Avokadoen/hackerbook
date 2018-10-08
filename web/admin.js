@@ -20,17 +20,17 @@ function createNewCategory(event){
     req.open("POST", "/admincreatenewcategory", true);
     req.setRequestHeader('Content-Type', 'application/json');
     req.send(JSON.stringify({
-        category:      event.category.value
+        name:      event.category.value
     }));
 
 
     req.onload = function() {
         answer = this.responseText;
-        if(answer === "Category inserted") {
+        if(req.status == 201) { //CREATED
             location.reload(true);
         }
         else {
-            document.getElementById("AdminErrorMessage").innerHTML = "Was not able to create new category";
+            document.getElementById("AdminErrorMessage").innerHTML = "Was not able to create new category: "+answer;
         }
     }
 }

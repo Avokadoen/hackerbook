@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"html/template"
 	"net/http"
+	"os"
 	"regexp"
 
 	"github.com/globalsign/mgo/bson"
@@ -37,6 +38,22 @@ func GenerateHomePage(w http.ResponseWriter, r *http.Request) {
 	data := HomePage{categories}
 
 	tmpl.Execute(w, data)
+}
+
+func GenerateSignupPage(w http.ResponseWriter, r *http.Request) {
+	captcha := struct {
+		Key string
+	}{os.Getenv("CAPTCHA_SITE_KEY")}
+
+	if captcha.Key == "" {
+		fmt.Println("Missing captcha site-key, reCaptcha won't work now!")
+	}
+
+	tmpl := template.Must(template.ParseFiles("./web/signup.html"))
+	err := tmpl.Execute(w, captcha)
+	if err != nil {
+		fmt.Println(err)
+	}
 }
 
 func GenerateCategoryPage(w http.ResponseWriter, r *http.Request) {

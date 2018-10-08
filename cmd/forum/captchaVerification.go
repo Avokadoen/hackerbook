@@ -2,9 +2,8 @@ package main
 
 import (
 	"encoding/json"
-	"fmt"
-	"io/ioutil"
 	"net/http"
+	"io/ioutil"
 	"net/url"
 	"os"
 	"strings"
@@ -22,7 +21,6 @@ func ValidateReCaptcha(token string) bool{
 	req, err := http.NewRequest("POST", "https://www.google.com/recaptcha/api/siteverify", strings.NewReader(form.Encode()))
 
 	if err != nil {
-		fmt.Printf("Unable to make request, err: %+v", err)
 		return false
 	}
 
@@ -32,7 +30,6 @@ func ValidateReCaptcha(token string) bool{
 	resp, err := client.Do(req)
 
 	if err != nil {
-		fmt.Printf("Unable to do request, err: %+v", err)
 		return false
 	}
 
@@ -41,7 +38,6 @@ func ValidateReCaptcha(token string) bool{
 	body, err := ioutil.ReadAll(resp.Body)
 
 	if err != nil {
-		fmt.Printf("Failed to read body, err: %+v", err)
 		return false
 	}
 
@@ -50,14 +46,10 @@ func ValidateReCaptcha(token string) bool{
 	err = json.Unmarshal(body, &response)
 
 	if len(response.Errorcode) > 0 {
-		for _, element := range response.Errorcode {
-			fmt.Printf("Errorcode: %v", element)
-		}
 		return false
 	}
 
-	if err != nil {
-		fmt.Printf("Unable to unmarshal response, err: %+v", err)
+	if err != nil{
 		return false
 	}
 

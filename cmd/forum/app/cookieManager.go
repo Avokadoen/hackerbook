@@ -66,7 +66,7 @@ func (SCManager *SCManager) CreateCookie(w http.ResponseWriter, m bson.ObjectId,
 		return ""
 	}
 	cookieData := database.CookieData{
-		Id:    userID,
+		ID:    userID,
 		Token: token,
 	}
 	if encoded, err := SCManager.secureCoIns.Encode(database.CookieName, cookieData); err == nil {
@@ -92,7 +92,7 @@ func (SCManager *SCManager) DeleteClientCookie(w http.ResponseWriter, urlString 
 		return fmt.Errorf("error at url parse error: %+v", err)
 	}
 	cookieData := database.CookieData{
-		Id:    bson.ObjectId(0),
+		ID:    bson.ObjectId(0),
 		Token: "",
 	}
 	if encoded, err := SCManager.secureCoIns.Encode(database.CookieName, cookieData); err == nil {
@@ -125,7 +125,7 @@ func (SCManager *SCManager) DeleteDBCookie(clientCookie database.CookieData, Ser
 	if dbData != clientCookie {
 		return fmt.Errorf("clientCookie did not match db")
 	}
-	Server.Database.DeleteCookie(dbData.Id, session)
+	Server.Database.DeleteCookie(dbData.ID, session)
 	return nil
 }
 

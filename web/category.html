@@ -20,7 +20,7 @@
             <input type="button" onClick="handleLogin(this.form)" value="login">
         </form>
         No account yet?
-        <form  action="/web/signup.html">
+        <form  action="/signup">
             <input type="submit" value="Sign up!"></input>
         </form>
     </div>
@@ -42,7 +42,7 @@
         <hr size="1">
             {{range $i, $t := .Topics}}
                 <div class="noPad" style="background-color: #{{with $o := mod $i 2}}{{if eq $o 0}}000{{else}}222{{end}}{{end}};">
-                <h2 class="noPad"><a href="/r/{{ $.Name }}/{{ $t.Id.Hex }}#{{with $x := urlquery $t.Title}}{{ printf "%.25s" $x }}{{end}}">{{ html $t.Title }}</a></h2>
+                <h2 class="noPad"><a href="/r/{{ $.Name }}/{{ $t.ID.Hex }}#{{with $x := urlquery $t.Title}}{{ printf "%.25s" $x }}{{end}}">{{ html $t.Title }}</a></h2>
                 </br>
                 <h4 class="noPad"><i>{{with $x := $t.Content | printf "%.80s"}}{{ html $x }}{{$y:=len $t.Content}}{{if gt $y 80}}...{{end}}{{end}}</i></h4>
                 </br>
