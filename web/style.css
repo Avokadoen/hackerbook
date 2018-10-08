@@ -11,6 +11,21 @@ p, h1, h2, h3, h4, h5, div {
 div.topic * {
     color: #dfe;
 }
+
+div.topic h1,
+div.topic h3,
+div.topic h5,
+div.topic div {
+    color: #fc3f00;
+}
+
+
+div.topic h2,
+div.topic h4,
+div.topic h6 {
+    color: lawngreen;
+}
+
 pre {
     background-color: #222;
 }
@@ -19,6 +34,10 @@ code {
     font-family: Courier;
     color: #09f;
     font-weight: bolder;
+}
+
+a {
+    color: #fc3f00;
 }
 
 h1 a{
@@ -55,7 +74,7 @@ div.center {
     border: 1px solid lawngreen;
     background-image: radial-gradient(#222, #111, #000);
     padding-left: 10px;
-    padding-right: 0px;
+    padding-right: 10px;
 }
 
 div.g-recaptcha{
@@ -78,6 +97,8 @@ div.comment{
     padding-right: 10px;
 }
 
+
+
 div.admin{
     display: none;
 }
@@ -86,7 +107,20 @@ input, textarea {
     color: lawngreen;
     border: 1px solid lawngreen;
 }
+input:active,
+input:focus, 
+textarea:active,
+textarea:focus {
+    background-color: black;
+    color: #fc3f00;
+    border: 1px solid #fc3f00;
+}
 textarea {
+    -webkit-box-sizing: border-box;
+	-moz-box-sizing: border-box;
+	box-sizing: border-box;
+
+	width: 100%;
     resize: vertical;
 }
 form.signUp {

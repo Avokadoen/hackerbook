@@ -31,7 +31,7 @@
     <div class="center">
         <div class="topic" id={{with $x := urlquery .Title}}{{ printf "%.25s" $x }}{{end}}>
             <h2 class="noPad">{{ html .Topic.Title }}</h2>
-            <h5 class="noPad">By <i>{{ html .Topic.Username }}</i></h5>
+            <h5 class="noPad">By user: <i>{{ html .Topic.Username }}</i></h5>
             <p>{{ .Topic.Content | markdown }}</p>
         </div>
         {{ range $i, $c := .Topic.Comments }}
@@ -63,13 +63,13 @@
             </div>
         {{ else }}
             <div class="comment">
-                <p>nobody has made a comment to this topic yet, be the first!</p>
+                <p><i>nobody has made a comment to this topic yet, be the first!</i></p>
             </div>
         {{ end }}
         <div id="postComment" class="postComment">
             <form action="JavaScript:postComment()">
                 Comment:</br>
-                <textarea id="commentInput" name="commentInput" cols="127" rows="10"></textarea>
+                <textarea id="commentInput" name="commentInput" ></textarea>
                 <input type="button" onClick="postComment(this.form)" value="Post Comment">
             </form>
             <p id="commentMessage--1"></p>
