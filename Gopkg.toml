@@ -61,4 +61,4 @@
 [metadata.heroku]
   root-package = "gitlab.com/avokadoen/softsecoblig2"
   go-version = "1.11"
-  install = [ "./cmd/forum/..." ]
+  install = [ "./cmd/forum/...", "./cmd/forum/app/...", "./web/..."]
