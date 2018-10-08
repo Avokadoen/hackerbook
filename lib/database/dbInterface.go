@@ -86,9 +86,9 @@ type CookieData struct {
 }
 
 type Category struct {
-	Id     bson.ObjectId   `bson:"_id,omitempty"`
-	Name   string          `json:"name"`
-	Topics []bson.ObjectId `json:"topics"`
+	Id     bson.ObjectId   `bson:"_id,omitempty" valid:"-"`
+	Name   string          `json:"name" valid:"alphanum, required"`
+	Topics []bson.ObjectId `json:"topics" valid:"-"`
 	//MORE?
 }
 
@@ -205,7 +205,7 @@ func (db *DbState) EnsureAllIndices() error {
 	err = collCook.DropAllIndexes()
 	if err != nil {
 		return fmt.Errorf("DropAllIndexes\n cookie failed, err: %+v", err)
-		
+
 	}
 	err = collCook.EnsureIndex(cookieIndex)
 	if err != nil {
@@ -325,7 +325,7 @@ func (db *DbState) DeleteCookie(id bson.ObjectId, session *mgo.Session) {
 
 func (db *DbState) GetUsername(id bson.ObjectId, session *mgo.Session) string {
 	if session == nil {
-		return 	"<bad boi>"
+		return "<bad boi>"
 	}
 	user := LoginUser{Username: "<bad boi>"}
 	collection := db.getCollection(TableUser, session)

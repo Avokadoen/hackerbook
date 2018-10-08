@@ -38,6 +38,11 @@ code {
 
 a {
     color: #fc3f00;
+    text-decoration: none;
+}
+a:hover {
+    color: lawngreen;
+    text-decoration: underline;
 }
 
 h1 a{
@@ -49,7 +54,8 @@ h1 a:visited{
 }
 
 h1 a:hover{
-    color: greenyellow;
+    color: #fc3f00;
+    text-decoration: underline;
 }
 
 
@@ -108,7 +114,7 @@ input, textarea {
     border: 1px solid lawngreen;
 }
 input:active,
-input:focus, 
+input:focus,
 textarea:active,
 textarea:focus {
     background-color: black;

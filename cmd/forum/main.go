@@ -40,17 +40,17 @@ func main() {
 		Port:     os.Getenv("PORT"),
 		Database: &database.DbState{},
 	}
-	
+
 	Server.Database.InitState() // TODO: use session copies instead of main pointer
 	err := Server.Database.CreateMainSession()
 	if err != nil {
 		panic("failed to create db session\n" + err.Error())
 	}
 
-	LogT := SetLogger()	//TODO fix it, does not work outside SetLogger function?!
+	LogT := SetLogger() //TODO fix it, does not work outside SetLogger function?!
 	LogT.Println("MainTest Println")
 	LogT.Print("MainTest Print\r\n")
-	LogT.Printf("MainTest printf %v","please")
+	LogT.Printf("MainTest printf %v", "please")
 
 	SecureCookie.Init()
 
@@ -64,20 +64,22 @@ func main() {
 	router.HandleFunc("/cookielogin", CookieLoginHandler).Methods(http.MethodPost)
 	router.HandleFunc("/verifyadmin", AuthenticateAdminHandler).Methods(http.MethodPost)
 	router.HandleFunc("/postlogin", ManualLoginHandler).Methods(http.MethodPost).Headers("Content-Type", "application/json")
-	router.HandleFunc("/signup", SignUpHandler).Methods(http.MethodPost).Headers("Content-Type", "application/json")
+	router.HandleFunc("/create_new_user", SignUpHandler).Methods(http.MethodPost).Headers("Content-Type", "application/json")
 	router.HandleFunc("/postcomment", PostCommentHandler).Methods(http.MethodPost).Headers("Content-Type", "application/json")
 	router.HandleFunc("/signout", SignOutHandler).Methods(http.MethodPost).Headers("Content-Type", "application/json")
+	router.HandleFunc("/admincreatenewcategory", CreateNewCategoryHandler).Methods(http.MethodPost)
 
 	//router.HandleFunc("/signup", SignUpHandler).Methods(http.MethodGet)
 
 	// router.HandleFunc("/", fs.ServeHTTP)
 	// PAGE HANDLES
+
 	router.HandleFunc("/", GenerateHomePage)
+	router.HandleFunc("/signup", GenerateSignupPage)
 	router.HandleFunc("/r/{category}", GenerateCategoryPage)
 	router.HandleFunc("/r/{category}/newtopic", CreateNewTopic).Methods(http.MethodPost)
 	router.HandleFunc("/r/{category}/{topicID}", GenerateTopicPage).Methods(http.MethodGet)
 	router.HandleFunc("/r/{category}/{topicID}/comment", CreateNewComment).Methods(http.MethodPost)
-	router.HandleFunc("/admincreatenewcategory", CreateNewCategoryHandler).Methods(http.MethodPost)
 	router.NotFoundHandler = http.HandlerFunc(NotFoundHandler) //set 404 default handle
 
 	fmt.Printf("\nListening through port %v...\n", Server.Port)
@@ -106,16 +108,16 @@ func main() {
 		log.Fatal(srv.ListenAndServeTLS("server.crt", "server.key"))*/
 }
 
-func SetLogger()(*log.Logger){ // Testing setting new loggers.
-	errorLog, err := os.OpenFile("info.log", os.O_WRONLY|os.O_CREATE|os.O_APPEND,0644)
-	if err!= nil{
+func SetLogger() *log.Logger { // Testing setting new loggers.
+	errorLog, err := os.OpenFile("info.log", os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0644)
+	if err != nil {
 		fmt.Printf("error opening file: %v", err)
 	}
 	defer errorLog.Close()
 	//logger.SetOutput(errorLog)
 	//logger.Print("Loggertest\r\n")
-	logger := log.New(errorLog,"logtest: ", 1)
-	logger.Println("Setlogger\r\n")
+	logger := log.New(errorLog, "logtest: ", 1)
+	logger.Println("Setlogger")
 	//mgo.SetLogger(logger) // Gjør mgo nå me dt?!?
 	//mgo.SetDebug(true)
 	return logger
@@ -161,7 +163,7 @@ func SignUpHandler(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("Captcha not validated successfully!"))
 		return
 	} else {
-	fmt.Println("Got through captcha validation!")
+		fmt.Println("Got through captcha validation!")
 	}
 
 	hashedPass := app.ConvertPlainPassword(rawUserData.Username, rawUserData.Password)
@@ -376,5 +378,3 @@ func PostCommentHandler(w http.ResponseWriter, r *http.Request) {
 	Server.Database.InsertToCollection(database.TableComment, comment, sessPtr)
 	// TODO få lagt den inn i topic?
 }
-
-
