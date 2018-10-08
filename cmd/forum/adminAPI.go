@@ -33,9 +33,10 @@ func AuthenticateAdmin(w http.ResponseWriter, r *http.Request) bson.ObjectId {
 
 	if adminID != bson.ObjectId(0) {
 		return adminID
-	} else {
-		return bson.ObjectId(0)
 	}
+
+	return bson.ObjectId(0)
+
 }
 
 // AuthenticateAdminHandler is the handler called to verify if the user is logged in as an admin
