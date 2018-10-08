@@ -9,6 +9,7 @@ import (
 	"gitlab.com/avokadoen/softsecoblig2/lib/database"
 )
 
+// AuthenticateAdmin returns the objectID of the admin account if it exists
 func AuthenticateAdmin(w http.ResponseWriter, r *http.Request) bson.ObjectId {
 	//Get user posting
 	cookie, err := SecureCookie.FetchCookie(r)
@@ -40,6 +41,7 @@ func AuthenticateAdmin(w http.ResponseWriter, r *http.Request) bson.ObjectId {
 	}
 }
 
+// AuthenticateAdminHandler is the handler called to verify if the user is logged in as an admin
 func AuthenticateAdminHandler(w http.ResponseWriter, r *http.Request) {
 
 	adminID := AuthenticateAdmin(w, r)
@@ -54,6 +56,7 @@ func AuthenticateAdminHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// CreateNewCategoryHandler is the handler called for an admin to create new categories
 func CreateNewCategoryHandler(w http.ResponseWriter, r *http.Request) {
 
 	adminID := AuthenticateAdmin(w, r)
