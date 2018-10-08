@@ -10,7 +10,10 @@ import (
 	"strings"
 )
 
-func ValidateReCaptcha(token string) bool {
+
+// ValidateReCaptcha sends the response token from reCaptcha on signup page, and
+// sends it to Google's API for verification.
+func ValidateReCaptcha(token string) bool{
 
 	form := url.Values{}
 
