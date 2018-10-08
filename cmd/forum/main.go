@@ -44,7 +44,7 @@ func main() {
 	Server.Database.InitState() // TODO: use session copies instead of main pointer
 	err := Server.Database.CreateMainSession()
 	if err != nil {
-		panic("failed to create db session\n" + err.Error())
+		log.Fatal("failed to create db session\n" + err.Error())
 	}
 
 	LogT := SetLogger()	//TODO fix it, does not work outside SetLogger function?!
@@ -80,7 +80,7 @@ func main() {
 	router.HandleFunc("/admincreatenewcategory", CreateNewCategoryHandler).Methods(http.MethodPost)
 	router.NotFoundHandler = http.HandlerFunc(NotFoundHandler) //set 404 default handle
 
-	fmt.Printf("\nListening through port %v...\n", Server.Port)
+	log.Printf("\nListening through port %v...\n", Server.Port)
 	// secure false: only when http, don't use in production
 	//Csrf := csrf.Protect(securecookie.GenerateRandomKey(32),csrf.Secure(false))
 	log.Fatal(http.ListenAndServe(":"+Server.Port, router)) //Csrf(
