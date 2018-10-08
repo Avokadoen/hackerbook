@@ -37,6 +37,112 @@
                 <input type="button" onClick="postTopic(this.form)" value="Post Topic">
             </form>
             <p id="postedTopicMessage"></p>
+            <button class="collapsible">Formatting guide</button>
+            <div class="content">
+                We utilize most features from <a href="https://daringfireball.net/projects/markdown/">Markdown</a> styling...
+                <hr size="1">
+                <button class="collapsible">Headers</button>
+                <div class="content">
+                    # heading 1<br/>
+                    ## heading 2<br/>
+                    ### heading 3<br/>
+                    #### heading 4<br/>
+                    ##### heading 5<br/>
+                    ###### heading 6<br/>
+                    <hr size="1">
+                    Results in the following:<br\>
+                    <h1>heading 1</h1>
+                    <h2>heading 2</h2>
+                    <h3>heading 3</h3>
+                    <h4>heading 4</h4>
+                    <h5>heading 5</h5>
+                    <h6>heading 6</h6>
+                </div>
+
+                <button class="collapsible">Emphasis</button>
+                <div class="content">
+                    *This text will be italic*<br>
+                    _This will also be italic_<br>
+                    <br>
+                    **This text will be bold**<br>
+                    __This will also be bold__<br>
+                    <br>
+                    _You **can** combine them_<br>
+                    <hr size="1">
+                    Results in the following:<br>
+                    <i>This text will be italic</i><br>
+                    <i>This will also be italic</i><br>
+                    <b>This text will be bold</b><br>
+                    <b>This will also be bold</b><br>
+                    <i>You <b>can</b> combine them</i>
+                </div>
+
+                <button class="collapsible">Lists</button>
+                <div class="content">
+                    <button class="collapsible">Unordered</button>
+                    <div class="content">
+                        * Item 1<br>
+                        * Item 2<br>
+                        &ensp;* Item 2a<br>
+                        &ensp;* Item 2b<br>
+                        <hr size="1">
+                        Results in the following:<br>
+                        <ul>
+                            <li>Item 1</li>
+                            <li>Item 2</li>
+                            <ul>
+                                <li>Item 2a</li>
+                                <li>Item 2b</li>
+                            </ul>
+                        </ul>
+                    </div>
+                    <button class="collapsible">Ordered</button>
+                    <div class="content">
+                        1. Item 1<br>
+                        2. Item 2<br>
+                        &ensp;3. Item 2a<br>
+                        &ensp;4. Item 2b<br>
+                        <hr size="1">
+                        Results in the following:<br\>
+                        <ol>
+                            <li>Item 1</li>
+                            <li>Item 2</li>
+                            <ol>
+                                <li>Item 2a</li>
+                                <li>Item 2b</li>
+                            </ol>
+                        </ol>
+                    </div>
+                </div>
+
+                <button class="collapsible">Images</button>
+                <div class="content">
+                    ![DOGE](https://upload.wikimedia.org/wikipedia/en/5/5f/Original_Doge_meme.jpg)<br>
+                    <hr size="1">
+                    i.e. this format: ![Alt Text](image url)<br>
+                    Results in the following:<br>
+                    <img alt="DOGE" src="https://upload.wikimedia.org/wikipedia/en/5/5f/Original_Doge_meme.jpg"/>
+                </div>
+
+                <button class="collapsible">Links</button>
+                <div class="content">
+                    https://about.gitlab.com/<br>
+                    [GITLAB](https://about.gitlab.com/)<br>
+                    <hr size="1">
+                    i.e. these formats:<br>
+                    &ensp;link url<br>
+                    &ensp;[Text](link url)<br>
+                    Results in the following:<br>
+                    <a href="https://about.gitlab.com/">https://about.gitlab.com/</a><br>
+                    <a href="https://about.gitlab.com/">GITLAB</a>
+                </div>
+                <button class="collapsible">MORE</button>
+                <div class="content">
+                    For a more extensive explanation<br>
+                    [Simple overview of Github-flavored Markdown, which all should work on this site too](https://guides.github.com/features/mastering-markdown/)<br>
+                    [Official Markdown Documentation](https://daringfireball.net/projects/markdown)<br>
+                </div>
+            </div>
         </div>
         <input type="button" onClick="postTopicVisible()" value="Create new topic">
         <hr size="1">
@@ -53,4 +159,20 @@
             {{end}}
     </div>
 </body>
+<script>
+var coll = document.getElementsByClassName("collapsible");
+var i;
+
+for (i = 0; i < coll.length; i++) {
+  coll[i].addEventListener("click", function() {
+    this.classList.toggle("active");
+    var content = this.nextElementSibling;
+    if (content.style.display === "block") {
+      content.style.display = "none";
+    } else {
+      content.style.display = "block";
+    }
+  });
+}
+</script>
 </html>
