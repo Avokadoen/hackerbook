@@ -1,1 +1,1 @@
-web: forum
+web: softsecoblig2/cmd/forum
