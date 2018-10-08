@@ -11,23 +11,33 @@ import (
 	"github.com/globalsign/mgo/bson"
 )
 
+//DATABASE TABLES
 const (
-	//DATABASE TABLES
+
+	// TableCategory ...
 	TableCategory = "category"
+	// TableUser ...
 	TableUser     = "user"
+	// TableTopic ...
 	TableTopic    = "topic"
+	// TableCookie ...
 	TableCookie   = "cookie"
+	// TableComment ...
 	TableComment  = "comment"
 	//TableEmailToken = "eToken"
+	// TableAdmin ...
 	TableAdmin = "admin"
 )
 
+// COOKIE CONST
 const (
-	// COOKIE CONST
+	// CookieName ...
 	CookieName       = "HackerBook"
+	// CookieExpiration defines lifespan of cookie
 	CookieExpiration = time.Hour * 24
 )
 
+// Db defines our DB API
 type Db interface { //TODO: split interface on type of access
 	InitState()
 	CreateMainSession() error
@@ -48,6 +58,7 @@ type Db interface { //TODO: split interface on type of access
 	PushTopicComment(topicID string, comment Comment, session *mgo.Session) error
 }
 
+// DbState contains the connection data for our mongodb
 type DbState struct {
 	Hosts    string
 	DbName   string
@@ -56,6 +67,7 @@ type DbState struct {
 	Session  *mgo.Session
 }
 
+// SignUpUser is a json struct for sign up form post
 type SignUpUser struct {
 	ID       bson.ObjectId `bson:"_id,omitempty" valid:"-"`
 	Email    string        `json:"email" valid:"email, required"`
@@ -64,31 +76,36 @@ type SignUpUser struct {
 	Response string        `json:"captcha" valid:"ascii, required"`
 }
 
+// AdminUser is json struct for a user that also is an admin
 type AdminUser struct {
 	ID     bson.ObjectId `bson:"_id,omitempty" valid:"-"`
 	UserID bson.ObjectId `json:"userID" valid:"-, required"`
 }
 
+// EmailToken unused
+/*
 type EmailToken struct { // Unverified emails
 	Username string `json:"username" valid:"alphanum, required"`
 	Token    string `json:"token" valid:"alphanum, required"`
-}
+}*/
 
+// LoginUser is json struct for users manually login in
 type LoginUser struct {
 	Username string `json:"username" valid:"alphanum, required"`
 	Password string `json:"password" valid:"alphanum, required"`
 }
 
+// CookieData is json struct for cookie data to be stored
 type CookieData struct {
 	ID    bson.ObjectId `json:"userid" valid:"-, required"`
 	Token string        `json:"token" valid:"alphanum, required"`
 }
 
+// Category is json struct to contain data relevant for a forum category
 type Category struct {
-	Id     bson.ObjectId   `bson:"_id,omitempty" valid:"-"`
+	ID     bson.ObjectId   `bson:"_id,omitempty" valid:"-"`
 	Name   string          `json:"name" valid:"printableascii, required"`
 	Topics []bson.ObjectId `json:"topics" valid:"-"`
-	//MORE?
 }
 
 /*type Category struct {
@@ -96,6 +113,7 @@ type Category struct {
 	Name	 string		   `json:"name" valid:"alphanum, required"`
 }*/
 
+// Topic is json struct to contain data relevant for a forum topic
 type Topic struct {
 	ID       bson.ObjectId `bson:"_id" valid:"-"`
 	Category string        `json:"name" valid:"alphanum, required"`
@@ -104,6 +122,7 @@ type Topic struct {
 	Content  string        `json:"content" valid:"halfwidth"`
 }
 
+// Comment is json struct to contain data relevant for a forum comment
 type Comment struct {
 	CommentID bson.ObjectId `bson:"_id,omitempty" valid:"-"`
 	Username  string        `json:"username" valid:"alphanum, required"`
@@ -111,6 +130,7 @@ type Comment struct {
 	ReplyTo   int           `json:"replyto" valid:"-"`
 }
 
+// InitState retrieves environment variables and stores them in a DbState
 func (db *DbState) InitState() {
 	db.Hosts = os.Getenv("DBURL")
 	db.DbName = os.Getenv("DBNAME")
@@ -124,20 +144,19 @@ func (db *DbState) InitState() {
 	log.Printf("%+v\n", db.Password)*/
 }
 
+// CreateMainSession dials the mongodb with DbState data and create main session
+// Returns error if failed
 func (db *DbState) CreateMainSession() (err error) {
 
 	url := fmt.Sprintf("mongodb://%s:%s@%s/%s", db.Username, db.Password, db.Hosts, db.DbName)
 
-	fmt.Println("Dialing the database!")
-
-	fmt.Println(url)
 	db.Session, err = mgo.Dial(url)
 
 	if db.Session == nil {
 		log.Fatal("Session was nil")
 	}
 	if err != nil {
-		err = fmt.Errorf("died on error: %+v", err)
+		return fmt.Errorf("died on error: %+v", err)
 	}
 
 	err = db.EnsureAllIndices()
@@ -148,6 +167,9 @@ func (db *DbState) CreateMainSession() (err error) {
 	return nil
 }
 
+// CreateSessionPtr copies the DbState session. Remember to close returned
+// pointer value when done with it
+// Returns the copy of the session and an error if failed
 func (db *DbState) CreateSessionPtr() (*mgo.Session, error) {
 	if db.Session == nil {
 		db.CreateMainSession()
@@ -159,6 +181,9 @@ func (db *DbState) CreateSessionPtr() (*mgo.Session, error) {
 	return sessionPtr, nil
 }
 
+// EnsureAllIndices defines index values in the DB to ensure
+// certain properties of the db
+// Returns an error if failed
 func (db *DbState) EnsureAllIndices() error {
 
 	categoryIndex := mgo.Index{
@@ -212,25 +237,12 @@ func (db *DbState) EnsureAllIndices() error {
 		return fmt.Errorf("EnsureAllIndices\n cookie failed, err: %+v", err)
 	}
 
-	/*topicIndex := mgo.Index{
-		Key: []string{"_id"},
-		Unique: true,
-		DropDups: true,
-		Background: false,
-		Sparse:     false,
-	}
-	collTopic := db.getCollection(TableTopic, db.Session)
-	err = collCook.DropAllIndexes()
-	if err != nil {
-		return fmt.Errorf("DropAllIndexes\n topic failed, err: %+v", err)
-	}
-	err = collTopic.EnsureIndex(topicIndex)
-	if err != nil {
-		return fmt.Errorf("EnsureAllIndices\n topic failed, err: %+v", err)
-	}*/
 	return nil
 }
 
+// ValidateMainSession check if DbState session is still valid
+// Will also attempt to recover a new session if invalid
+// Returns error if failed to validate
 func (db *DbState) ValidateMainSession() error {
 	if db.Session != nil {
 		return nil
@@ -242,14 +254,16 @@ func (db *DbState) ValidateMainSession() error {
 	return nil
 }
 
+// getCollection will return a collection pointer it found said collection
 func (db *DbState) getCollection(collectionName string, session *mgo.Session) *mgo.Collection {
 	if session == nil {
-		println("session was nil in InsertToCollection")
 		return nil
 	}
 	return session.DB(db.DbName).C(strings.ToLower(collectionName))
 }
 
+// InsertToCollection will attempt to insert interface into collection with collectionName as name
+// Returns error if failed to insert
 func (db *DbState) InsertToCollection(collectionName string, data interface{}, session *mgo.Session) error {
 	if session == nil {
 		return fmt.Errorf("session was nil in InsertToCollection")
@@ -258,6 +272,8 @@ func (db *DbState) InsertToCollection(collectionName string, data interface{}, s
 	return collection.Insert(data)
 }
 
+// AuthenticateUser will verify if sent user actually is a stored user
+// Returns id of user if user was authentic
 func (db *DbState) AuthenticateUser(user LoginUser, session *mgo.Session) bson.ObjectId {
 	collection := db.getCollection(TableUser, session)
 	var storedUser SignUpUser
@@ -269,6 +285,8 @@ func (db *DbState) AuthenticateUser(user LoginUser, session *mgo.Session) bson.O
 	return storedUser.ID
 }
 
+// AuthenticateAdmin will verify if sent admin actually is a stored admin
+// Returns id of admin if admin was authentic
 func (db *DbState) AuthenticateAdmin(userID bson.ObjectId, session *mgo.Session) bson.ObjectId {
 	collection := db.getCollection(TableAdmin, session)
 	var adminUser AdminUser
@@ -280,6 +298,9 @@ func (db *DbState) AuthenticateAdmin(userID bson.ObjectId, session *mgo.Session)
 	return adminUser.ID
 }
 
+// IsExistingUser checks if certain parts of a sign-up form is already used
+// by another user
+// Returns a string with what is in use and error if something went wrong
 func (db *DbState) IsExistingUser(user SignUpUser, session *mgo.Session) (*string, error) {
 	collection := db.getCollection(TableUser, session)
 	rtrString := new(string)
@@ -304,6 +325,7 @@ func (db *DbState) IsExistingUser(user SignUpUser, session *mgo.Session) (*strin
 	return rtrString, nil
 }
 
+// GetCookie tries to insert cookie data into the entry parameter
 func (db *DbState) GetCookie(cookie CookieData, entry *CookieData, session *mgo.Session) {
 
 	collection := db.getCollection(TableCookie, session)
@@ -314,6 +336,7 @@ func (db *DbState) GetCookie(cookie CookieData, entry *CookieData, session *mgo.
 
 }
 
+// DeleteCookie deletes all cookies that share id with parameter id
 func (db *DbState) DeleteCookie(id bson.ObjectId, session *mgo.Session) {
 	collection := db.getCollection(TableCookie, session)
 	// TODO: log?
@@ -323,6 +346,8 @@ func (db *DbState) DeleteCookie(id bson.ObjectId, session *mgo.Session) {
 	}
 }
 
+// GetUsername retrieves username of user that share id with parameter id
+// Returns username or <bad boi> if failed
 func (db *DbState) GetUsername(id bson.ObjectId, session *mgo.Session) string {
 	if session == nil {
 		return "<bad boi>"
@@ -336,13 +361,17 @@ func (db *DbState) GetUsername(id bson.ObjectId, session *mgo.Session) string {
 	return user.Username
 }
 
-//TODO sepparate into other file
+// GetCategories retrieves all categories in the collection
+// Returns error if session was nil
 func (db *DbState) GetCategories(categories interface{}, session *mgo.Session) error {
 	if session == nil {
 		return fmt.Errorf("nil session in get getcategories")
 	}
 	return db.getCollection(TableCategory, session).Find(nil).All(categories)
 }
+
+// GetCategory retrieves a category from the collection
+// Returns error if it failed
 func (db *DbState) GetCategory(categoryName string, category interface{}, session *mgo.Session) error {
 	if session == nil {
 		return fmt.Errorf("nil session in get getcategory")
@@ -363,6 +392,8 @@ func (db *DbState) GetCategory(categoryName string, category interface{}, sessio
 	return pipe.One(category)
 }
 
+// IsExistingCategory verifies that said category does not already exist
+// Returns false if it does not exist, true otherwise
 func (db *DbState) IsExistingCategory(categoryName string, session *mgo.Session) bool {
 	if session == nil {
 		fmt.Printf("session was nil")
@@ -388,6 +419,8 @@ func (db *DbState) IsExistingCategory(categoryName string, session *mgo.Session)
 
 }
 
+// GetTopic retrieves a topic from collection
+// Returns an error if session was nil
 func (db *DbState) GetTopic(categoryName string, topicID string, topic interface{}, session *mgo.Session) error {
 	if session == nil {
 		return fmt.Errorf("nil session in get GetTopic")
@@ -409,6 +442,8 @@ func (db *DbState) GetTopic(categoryName string, topicID string, topic interface
 	return pipe.One(topic)
 }
 
+// PushTopicComment inserts comment into topic collection
+// Returns error if session is nil or if it failed to update collection
 func (db *DbState) PushTopicComment(topicID string, comment Comment, session *mgo.Session) error {
 	if session == nil {
 		return fmt.Errorf("nil session in get PushTopicComment")
@@ -419,6 +454,9 @@ func (db *DbState) PushTopicComment(topicID string, comment Comment, session *mg
 
 	return db.getCollection(TableTopic, session).Update(selector, update)
 }
+
+// CreateTopic creates a new topic in the db
+// Returns error if session is nil or if it failed to update collection
 func (db *DbState) CreateTopic(categoryName string, topic Topic, session *mgo.Session) error {
 
 	if session == nil {
