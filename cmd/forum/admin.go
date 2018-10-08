@@ -30,7 +30,7 @@ func AuthenticateAdmin(w http.ResponseWriter, r *http.Request) bson.ObjectId {
 		return bson.ObjectId(0)
 	}
 
-	adminID := Server.Database.AuthenticateAdmin(cookie.Id, sessPtr)
+	adminID := Server.Database.AuthenticateAdmin(cookie.ID, sessPtr)
 
 	if adminID != bson.ObjectId(0){
 		return adminID

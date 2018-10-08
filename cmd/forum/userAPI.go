@@ -35,7 +35,7 @@ func authenticateUserHandler(w http.ResponseWriter, r *http.Request) string {
 		//TODO, be nice with the user and store the comment while he's logging in?
 		return ""
 	}
-	return Server.Database.GetUsername(cookie.Id, sessPtr) //TODO handle errors?
+	return Server.Database.GetUsername(cookie.ID, sessPtr) //TODO handle errors?
 }
 
 //Content creation handlers
@@ -118,7 +118,7 @@ func CreateNewComment(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	//validate existance of topic in category with Id = topicID, simple pipe with lookup and match...
+	//validate existance of topic in category with ID = topicID, simple pipe with lookup and match...
 	var topicInCategory TopicAndCategory
 	err = Server.Database.GetTopic(categoryName, topicID, &topicInCategory, sessPtr)
 	if err != nil {

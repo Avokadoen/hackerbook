@@ -231,7 +231,7 @@ func SignOutHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	Server.Database.DeleteCookie(cookie.Id, sessPtr)
+	Server.Database.DeleteCookie(cookie.ID, sessPtr)
 
 }
 
@@ -262,7 +262,7 @@ func CookieLoginHandler(w http.ResponseWriter, r *http.Request) {
 		fmt.Println(err)
 		return
 	}
-	username := Server.Database.GetUsername(cookie.Id, sessPtr)
+	username := Server.Database.GetUsername(cookie.ID, sessPtr)
 	w.Write([]byte(username))
 }
 
@@ -319,10 +319,10 @@ func ManualLoginHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		dbCookie := database.CookieData{
-			Id:    userDBId,
+			ID:    userDBId,
 			Token: encoded,
 		}
-		Server.Database.DeleteCookie(dbCookie.Id, sessPtr)
+		Server.Database.DeleteCookie(dbCookie.ID, sessPtr)
 		Server.Database.InsertToCollection(database.TableCookie, dbCookie, sessPtr)
 	}
 	w.Write(body)
@@ -357,7 +357,7 @@ func PostCommentHandler(w http.ResponseWriter, r *http.Request) {
 		fmt.Printf("unable to fetch cookie: %v", err)
 		return
 	}
-	username := Server.Database.GetUsername(cookie.Id, sessPtr)
+	username := Server.Database.GetUsername(cookie.ID, sessPtr)
 
 	comment := database.Comment{
 		Username: username,
