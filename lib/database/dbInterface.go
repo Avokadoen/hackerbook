@@ -13,13 +13,13 @@ import (
 
 const (
 	//DATABASE TABLES
-	TableCategory   = "category"
-	TableUser       = "user"
-	TableTopic      = "topic"
-	TableCookie     = "cookie"
-	TableComment    = "comment"
-	TableEmailToken = "eToken"
-	TableAdmin      = "admin"
+	TableCategory = "category"
+	TableUser     = "user"
+	TableTopic    = "topic"
+	TableCookie   = "cookie"
+	TableComment  = "comment"
+	//TableEmailToken = "eToken"
+	TableAdmin = "admin"
 )
 
 const (
@@ -57,7 +57,7 @@ type DbState struct {
 }
 
 type SignUpUser struct {
-	Id       bson.ObjectId `bson:"_id,omitempty" valid:"-"`
+	ID       bson.ObjectId `bson:"_id,omitempty" valid:"-"`
 	Email    string        `json:"email" valid:"email, required"`
 	Username string        `json:"username" valid:"alphanum, required"`
 	Password string        `json:"password" valid:"alphanum, required"`
@@ -65,7 +65,7 @@ type SignUpUser struct {
 }
 
 type AdminUser struct {
-	Id     bson.ObjectId `bson:"_id,omitempty" valid:"-"`
+	ID     bson.ObjectId `bson:"_id,omitempty" valid:"-"`
 	UserID bson.ObjectId `json:"userID" valid:"-, required"`
 }
 
@@ -80,24 +80,24 @@ type LoginUser struct {
 }
 
 type CookieData struct {
-	Id    bson.ObjectId `json:"userid" valid:"-, required"`
+	ID    bson.ObjectId `json:"userid" valid:"-, required"`
 	Token string        `json:"token" valid:"alphanum, required"`
 }
 
 type Category struct {
-	Id     bson.ObjectId   `bson:"_id,omitempty"`
-	Name   string          `json:"name"`
-	Topics []bson.ObjectId `json:"topics"`
+	Id     bson.ObjectId   `bson:"_id,omitempty" valid:"-"`
+	Name   string          `json:"name" valid:"printableascii, required"`
+	Topics []bson.ObjectId `json:"topics" valid:"-"`
 	//MORE?
 }
 
 /*type Category struct {
-	Id       bson.ObjectId `bson:"_id,omitempty" valid:"-, optional"`
+	ID       bson.ObjectId `bson:"_id,omitempty" valid:"-, optional"`
 	Name	 string		   `json:"name" valid:"alphanum, required"`
 }*/
 
 type Topic struct {
-	Id       bson.ObjectId `bson:"_id" valid:"-"`
+	ID       bson.ObjectId `bson:"_id" valid:"-"`
 	Category string        `json:"name" valid:"alphanum, required"`
 	Username string        `json:"username" valid:"alphanum, required"`
 	Title    string        `json:"title" valid:"printableascii, required"`
@@ -205,7 +205,7 @@ func (db *DbState) EnsureAllIndices() error {
 	err = collCook.DropAllIndexes()
 	if err != nil {
 		return fmt.Errorf("DropAllIndexes\n cookie failed, err: %+v", err)
-		
+
 	}
 	err = collCook.EnsureIndex(cookieIndex)
 	if err != nil {
@@ -266,7 +266,7 @@ func (db *DbState) AuthenticateUser(user LoginUser, session *mgo.Session) bson.O
 		log.Printf("%+v", err)
 		return bson.ObjectId(0)
 	}
-	return storedUser.Id
+	return storedUser.ID
 }
 
 func (db *DbState) AuthenticateAdmin(userID bson.ObjectId, session *mgo.Session) bson.ObjectId {
@@ -277,7 +277,7 @@ func (db *DbState) AuthenticateAdmin(userID bson.ObjectId, session *mgo.Session)
 		log.Printf("%+v", err)
 		return bson.ObjectId(0)
 	}
-	return adminUser.Id
+	return adminUser.ID
 }
 
 func (db *DbState) IsExistingUser(user SignUpUser, session *mgo.Session) (*string, error) {
@@ -307,7 +307,7 @@ func (db *DbState) IsExistingUser(user SignUpUser, session *mgo.Session) (*strin
 func (db *DbState) GetCookie(cookie CookieData, entry *CookieData, session *mgo.Session) {
 
 	collection := db.getCollection(TableCookie, session)
-	err := collection.Find(bson.M{"id": bson.ObjectIdHex(cookie.Id.Hex())}).One(&entry)
+	err := collection.Find(bson.M{"id": bson.ObjectIdHex(cookie.ID.Hex())}).One(&entry)
 	if err != nil {
 		fmt.Printf("when retrieving cookie error: %+v", err)
 	}
@@ -325,7 +325,7 @@ func (db *DbState) DeleteCookie(id bson.ObjectId, session *mgo.Session) {
 
 func (db *DbState) GetUsername(id bson.ObjectId, session *mgo.Session) string {
 	if session == nil {
-		return 	"<bad boi>"
+		return "<bad boi>"
 	}
 	user := LoginUser{Username: "<bad boi>"}
 	collection := db.getCollection(TableUser, session)
@@ -424,11 +424,11 @@ func (db *DbState) CreateTopic(categoryName string, topic Topic, session *mgo.Se
 	if session == nil {
 		return fmt.Errorf("nil session in get CreateTopic")
 	}
-	topic.Id = bson.NewObjectId()
+	topic.ID = bson.NewObjectId()
 	db.InsertToCollection(TableTopic, topic, session)
 
 	selector := bson.M{"name": categoryName}
-	update := bson.M{"$push": bson.M{"topics": bson.M{"$each": []bson.ObjectId{topic.Id}}}}
+	update := bson.M{"$push": bson.M{"topics": bson.M{"$each": []bson.ObjectId{topic.ID}}}}
 
 	return db.getCollection(TableCategory, session).Update(selector, update)
 }

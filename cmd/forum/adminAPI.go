@@ -2,9 +2,11 @@ package main
 
 import (
 	"net/http"
-	"github.com/globalsign/mgo/bson"
-	"io/ioutil"
 	"encoding/json"
+	"io/ioutil"
+
+	validator "github.com/asaskevich/govalidator"
+	"github.com/globalsign/mgo/bson"
 	"gitlab.com/avokadoen/softsecoblig2/lib/database"
 )
 
@@ -27,11 +29,11 @@ func AuthenticateAdmin(w http.ResponseWriter, r *http.Request) bson.ObjectId {
 		return bson.ObjectId(0)
 	}
 
-	adminID := Server.Database.AuthenticateAdmin(cookie.Id, sessPtr)
+	adminID := Server.Database.AuthenticateAdmin(cookie.ID, sessPtr)
 
-	if adminID != bson.ObjectId(0){
+	if adminID != bson.ObjectId(0) {
 		return adminID
-	} else{
+	} else {
 		return bson.ObjectId(0)
 	}
 }
@@ -41,7 +43,7 @@ func AuthenticateAdminHandler(w http.ResponseWriter, r *http.Request) {
 
 	adminID := AuthenticateAdmin(w, r)
 
-	if adminID != bson.ObjectId(0){
+	if adminID != bson.ObjectId(0) {
 		w.Write([]byte("Admin granted"))
 	} else{
 		w.WriteHeader(http.StatusUnauthorized)
@@ -69,6 +71,7 @@ func CreateNewCategoryHandler(w http.ResponseWriter, r *http.Request) {
 
 
 	var category database.Category //TODO: Remove duplicate category struct in dbinterface and structs.go
+
 	rBody, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
@@ -83,8 +86,22 @@ func CreateNewCategoryHandler(w http.ResponseWriter, r *http.Request) {
 	var topics []bson.ObjectId
 	category.Topics = topics
 
-	if !Server.Database.IsExistingCategory(category.Name, sessPtr){
+
+	if !Server.Database.IsExistingCategory(category.Name, sessPtr) {
+
+		if valid, err := validator.ValidateStruct(category); !valid {
+			if err != nil {
+				w.WriteHeader(http.StatusInternalServerError)
+			}
+			w.WriteHeader(http.StatusBadRequest)
+			return
+		}
+
 		Server.Database.InsertToCollection(database.TableCategory, category, sessPtr)
-		w.Write([]byte("Category inserted"))
+		w.WriteHeader(http.StatusCreated) //201
+		w.Write([]byte("Category created"))
+		return
 	}
+	w.WriteHeader(http.StatusBadRequest)
+
 }

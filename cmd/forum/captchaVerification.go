@@ -1,13 +1,14 @@
 package main
 
 import (
-	"os"
 	"encoding/json"
 	"net/http"
 	"io/ioutil"
-	"strings"
 	"net/url"
+	"os"
+	"strings"
 )
+
 
 // ValidateReCaptcha sends the response token from reCaptcha on signup page, and
 // sends it to Google's API for verification.

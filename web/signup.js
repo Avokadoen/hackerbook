@@ -5,7 +5,7 @@ function handleSignup(event){
     var req = new XMLHttpRequest();
 
     if(validateInput(event.username, event.email, event.password, $('#confirmPasswordInput').val())){
-        req.open("POST", "/signup", true);
+        req.open("POST", "/create_new_user", true);
         req.setRequestHeader('Content-Type', 'application/json');
         req.send(JSON.stringify({
             email:      event.email.value,
