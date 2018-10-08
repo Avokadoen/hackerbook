@@ -12,10 +12,13 @@ import (
 	"gitlab.com/avokadoen/softsecoblig2/lib/database"
 )
 
+// SCManager implements CookieManager interface.
+// Also holds a SecureCookie
 type SCManager struct {
 	secureCoIns *securecookie.SecureCookie
 }
 
+// CookieManager is for managing one secure cookie
 type CookieManager interface {
 	Init()
 	FetchCookie(r *http.Request) database.CookieData
@@ -26,11 +29,15 @@ type CookieManager interface {
 	AuthenticateCookie(w http.ResponseWriter, Server *Server, clientCookie database.CookieData, session *mgo.Session) error
 }
 
-// TODO: we need to recreate securecookie if it is nil
+
+// Init initializes the secure cookie instance by generating random keys of 32 byte length
 func (SCManager *SCManager) Init() {
+	// TODO: we need to recreate securecookie if it is nil
 	SCManager.secureCoIns = securecookie.New(securecookie.GenerateRandomKey(32), securecookie.GenerateRandomKey(32))
 }
 
+// FetchCookie retrieves the client cookie and decodes its content.
+// Returns the decoded data and an error
 func (SCManager *SCManager) FetchCookie(r *http.Request) (database.CookieData, error) {
 
 	cookieData := database.CookieData{}
@@ -47,6 +54,8 @@ func (SCManager *SCManager) FetchCookie(r *http.Request) (database.CookieData, e
 	return cookieData, nil
 }
 
+// CreateCookie creates a client cookie with login credentials and encodes it
+// encoded data will be returned as string as well as set in http
 func (SCManager *SCManager) CreateCookie(w http.ResponseWriter, m bson.ObjectId, urlString string) string {
 	timeCreated := time.Now().UnixNano()
 	token := CreateHash(string(timeCreated))
@@ -54,7 +63,6 @@ func (SCManager *SCManager) CreateCookie(w http.ResponseWriter, m bson.ObjectId,
 
 	u, err := url.Parse(urlString)
 	if err != nil {
-		fmt.Printf("error at url parse error: %+v", err)
 		return ""
 	}
 	cookieData := database.CookieData{
@@ -70,15 +78,14 @@ func (SCManager *SCManager) CreateCookie(w http.ResponseWriter, m bson.ObjectId,
 			Expires:  time.Now().Add(database.CookieExpiration),
 			Secure:   false,
 		}
-		fmt.Println("created cookie")
 
 		http.SetCookie(w, &tokenCookie)
 		return encoded
 	}
-	fmt.Println("failed to create cookie")
 	return ""
 }
 
+// DeleteClientCookie deletes(overwrites) client cookie. Returns error if it failed
 func (SCManager *SCManager) DeleteClientCookie(w http.ResponseWriter, urlString string) error {
 	u, err := url.Parse(urlString)
 	if err != nil {
@@ -97,7 +104,6 @@ func (SCManager *SCManager) DeleteClientCookie(w http.ResponseWriter, urlString 
 			Expires:  time.Now(),
 			Secure:   true,
 		}
-		fmt.Println("delete cookie")
 
 		http.SetCookie(w, &tokenCookie)
 		return nil
@@ -105,6 +111,8 @@ func (SCManager *SCManager) DeleteClientCookie(w http.ResponseWriter, urlString 
 	return fmt.Errorf("failed to delete client cookie")
 }
 
+// DeleteDBCookie deletes all cookies with same user id as sent cookie
+// Returns error if failed
 func (SCManager *SCManager) DeleteDBCookie(clientCookie database.CookieData, Server *Server, session *mgo.Session) error {
 	if len(clientCookie.Token) <= 0 {
 		return fmt.Errorf("invalid token in cookie")
@@ -121,17 +129,20 @@ func (SCManager *SCManager) DeleteDBCookie(clientCookie database.CookieData, Ser
 	return nil
 }
 
+// DecodeDBCookieData decodes cookie data
+// Returns decoded cookie data if success
 func (SCManager *SCManager) DecodeDBCookieData(data database.CookieData, session *mgo.Session) database.CookieData {
 
 	decodeData := database.CookieData{}
 	err := SCManager.secureCoIns.Decode(database.CookieName, data.Token, &decodeData)
 	if err != nil {
-		fmt.Printf("when decoding dbCookie error: %+v", err)
 		return database.CookieData{}
 	}
 	return decodeData
 }
 
+// AuthenticateCookie checks client cookie towards db cookie to validate the client cookie
+// Returns an error if authentication failed
 func (SCManager *SCManager) AuthenticateCookie(w http.ResponseWriter, Server *Server, clientCookie database.CookieData, session *mgo.Session) error {
 	if len(clientCookie.Token) <= 0 {
 		return fmt.Errorf("invalid token in cookie")
