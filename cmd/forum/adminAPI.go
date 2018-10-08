@@ -34,7 +34,7 @@ func AuthenticateAdmin(w http.ResponseWriter, r *http.Request) bson.ObjectId {
 	if adminID != bson.ObjectId(0) {
 		return adminID
 	}
-	
+
 	return bson.ObjectId(0)
 
 }
