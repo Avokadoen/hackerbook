@@ -1,1 +1,1 @@
-web: forum
+web: main.go
