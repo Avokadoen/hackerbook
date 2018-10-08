@@ -23,3 +23,6 @@
 
 ## Running application
 Feel free to go to our heroku hosted application at: https://hackerbook.herokuapp.com/
+
+## documentation
+You can visit [godoc](https://godoc.org/github.com/Avokadoen/hackerbook) to read our documentation
