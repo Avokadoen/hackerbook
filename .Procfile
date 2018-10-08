@@ -1,1 +1,1 @@
-web: ./cmd/forum/main.go
+web: ./cmd/forum
