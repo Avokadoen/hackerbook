@@ -1,16 +1,16 @@
 package main
 
 import (
-	"os"
 	"encoding/json"
 	"fmt"
-	"net/http"
 	"io/ioutil"
-	"strings"
+	"net/http"
 	"net/url"
+	"os"
+	"strings"
 )
 
-func ValidateReCaptcha(token string) bool{
+func ValidateReCaptcha(token string) bool {
 
 	form := url.Values{}
 
@@ -47,13 +47,13 @@ func ValidateReCaptcha(token string) bool{
 	err = json.Unmarshal(body, &response)
 
 	if len(response.Errorcode) > 0 {
-		for _, element := range response.Errorcode{
+		for _, element := range response.Errorcode {
 			fmt.Printf("Errorcode: %v", element)
 		}
 		return false
 	}
 
-	if err != nil{
+	if err != nil {
 		fmt.Printf("Unable to unmarshal response, err: %+v", err)
 		return false
 	}

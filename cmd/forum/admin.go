@@ -1,12 +1,12 @@
 package main
 
 import (
-	"net/http"
+	"encoding/json"
 	"fmt"
 	"github.com/globalsign/mgo/bson"
-	"io/ioutil"
-	"encoding/json"
 	"gitlab.com/avokadoen/softsecoblig2/lib/database"
+	"io/ioutil"
+	"net/http"
 )
 
 func AuthenticateAdmin(w http.ResponseWriter, r *http.Request) bson.ObjectId {
@@ -32,9 +32,9 @@ func AuthenticateAdmin(w http.ResponseWriter, r *http.Request) bson.ObjectId {
 
 	adminID := Server.Database.AuthenticateAdmin(cookie.Id, sessPtr)
 
-	if adminID != bson.ObjectId(0){
+	if adminID != bson.ObjectId(0) {
 		return adminID
-	} else{
+	} else {
 		fmt.Printf("User not admin, err: %v", err)
 		return bson.ObjectId(0)
 	}
@@ -44,10 +44,10 @@ func AuthenticateAdminHandler(w http.ResponseWriter, r *http.Request) {
 
 	adminID := AuthenticateAdmin(w, r)
 
-	if adminID != bson.ObjectId(0){
+	if adminID != bson.ObjectId(0) {
 		w.Write([]byte("Admin granted"))
 		fmt.Printf("User is admin\n")
-	} else{
+	} else {
 		fmt.Printf("User not admin, err:")
 		w.WriteHeader(http.StatusUnauthorized)
 		w.Write([]byte("Not granted"))
@@ -58,9 +58,9 @@ func CreateNewCategoryHandler(w http.ResponseWriter, r *http.Request) {
 
 	adminID := AuthenticateAdmin(w, r)
 
-	if adminID != bson.ObjectId(0){
+	if adminID != bson.ObjectId(0) {
 		fmt.Printf("User is admin\n")
-	} else{
+	} else {
 		fmt.Printf("User not admin, err:")
 		w.WriteHeader(http.StatusUnauthorized)
 		return
@@ -72,7 +72,6 @@ func CreateNewCategoryHandler(w http.ResponseWriter, r *http.Request) {
 		fmt.Println(err)
 		return
 	}
-
 
 	var category database.Category //TODO: Got duplicate category struct in dbinterface and structs.go
 	rBody, err := ioutil.ReadAll(r.Body)
@@ -91,7 +90,7 @@ func CreateNewCategoryHandler(w http.ResponseWriter, r *http.Request) {
 	var topics []bson.ObjectId
 	category.Topics = topics
 
-	if !Server.Database.IsExistingCategory(category.Name, sessPtr){ //TODO: This somehow says it already exists
+	if !Server.Database.IsExistingCategory(category.Name, sessPtr) { //TODO: This somehow says it already exists
 		Server.Database.InsertToCollection(database.TableCategory, category, sessPtr) //TODO: This doesn't put it properly into the db
 		fmt.Println("Category inserted to database!")
 		w.Write([]byte("Category inserted"))
