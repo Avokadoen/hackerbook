@@ -39,6 +39,8 @@ func authenticateUserHandler(w http.ResponseWriter, r *http.Request) string {
 }
 
 //Content creation handlers
+
+// CreateNewTopic creates a new topic, sets the user who posted it and sends its ID into the category in which it exists
 func CreateNewTopic(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("Create Topic Handle Recieved your request!")
 
@@ -101,6 +103,7 @@ func CreateNewTopic(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusCreated)
 }
 
+// CreateNewComment creates a new comment, sets the user to comment and validates the topic and category which it exists in
 func CreateNewComment(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("Create Comment Handle Recieved your request!")
 

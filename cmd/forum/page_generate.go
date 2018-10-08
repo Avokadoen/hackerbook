@@ -13,10 +13,11 @@ import (
 	"gopkg.in/russross/blackfriday.v2"
 )
 
+// HomePage struct containing the categories for the homepage
 type HomePage struct {
 	Categories []Category
 }
-
+// GenerateHomePage generates the homepage from categories in the database
 func GenerateHomePage(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 	sessPtr, err := Server.Database.CreateSessionPtr()
@@ -40,6 +41,7 @@ func GenerateHomePage(w http.ResponseWriter, r *http.Request) {
 	tmpl.Execute(w, data)
 }
 
+// GenerateSignupPage generates the signup page with the environments captcha site key.
 func GenerateSignupPage(w http.ResponseWriter, r *http.Request) {
 	captcha := struct {
 		Key string
@@ -56,6 +58,7 @@ func GenerateSignupPage(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// GenerateCategoryPage generates a categories page with its topics from the database
 func GenerateCategoryPage(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 	sessPtr, err := Server.Database.CreateSessionPtr()
@@ -84,6 +87,7 @@ func GenerateCategoryPage(w http.ResponseWriter, r *http.Request) {
 
 }
 
+// GenerateTopicPage generates a topic site with comments from the database
 func GenerateTopicPage(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 	fmt.Println("Generating Topic Page")
@@ -126,7 +130,7 @@ func GenerateTopicPage(w http.ResponseWriter, r *http.Request) {
 
 }
 
-//MISC handlers
+// NotFoundHandler creates a default error site
 func NotFoundHandler(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 	w.WriteHeader(http.StatusNotFound)

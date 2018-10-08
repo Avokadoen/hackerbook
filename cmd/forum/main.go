@@ -33,8 +33,12 @@ func init() {
 	gotenv.Load("./cmd/forum/.env") //this path is relative to working dir upon go install
 }
 
+// Server maintains the connection with mongodb
 var Server *app.Server
+
+// SecureCookie manage the secure cookie
 var SecureCookie app.SCManager // TODO: make sure there always is a securecookie
+
 func main() {
 	log.Print("1")
 	validator.SetFieldsRequiredByDefault(true)
@@ -162,8 +166,6 @@ func SignUpHandler(w http.ResponseWriter, r *http.Request) {
 	if validateRecaptcha == false {
 		w.Write([]byte("Captcha not validated successfully!"))
 		return
-	} else {
-		// captcha ok
 	}
 
 	hashedPass := app.ConvertPlainPassword(rawUserData.Username, rawUserData.Password)

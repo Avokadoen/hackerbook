@@ -20,4 +20,9 @@
 - For each variable in your .env file you have to do <b>"heroku config:set *variablename*=*value*"</b>. For more information follow this [guide](https://devcenter.heroku.com/articles/config-vars)
 - Then do <b>"git push heroku master"</b>
 - If all your variable are defined correctly according to your mongodb then you can run <b>"heroku open"</b>
-    
+
+## Running application
+Feel free to go to our heroku hosted application at: https://hackerbook.herokuapp.com/
+
+## documentation
+You can visit [godoc](https://godoc.org/github.com/Avokadoen/hackerbook) to read our documentation
