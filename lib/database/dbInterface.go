@@ -117,10 +117,11 @@ func (db *DbState) InitState() {
 	db.Username = os.Getenv("DBUSERNAME")
 	db.Password = os.Getenv("DBPASSWORD")
 
-	fmt.Printf("%+v\n", db.Hosts)
-	fmt.Printf("%+v\n", db.DbName)
-	fmt.Printf("%+v\n", db.Username)
-	fmt.Printf("%+v\n", db.Password)
+	// TODO: do not log this
+	log.Printf("%+v\n", db.Hosts)
+	log.Printf("%+v\n", db.DbName)
+	log.Printf("%+v\n", db.Username)
+	log.Printf("%+v\n", db.Password)
 }
 
 func (db *DbState) CreateMainSession() (err error) {

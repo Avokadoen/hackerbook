@@ -34,6 +34,7 @@ func init() {
 var Server *app.Server
 var SecureCookie app.SCManager // TODO: make sure there always is a securecookie
 func main() {
+	log.Print("1")
 	validator.SetFieldsRequiredByDefault(true)
 
 	Server = &app.Server{
