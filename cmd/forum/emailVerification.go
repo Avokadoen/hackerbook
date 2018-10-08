@@ -5,6 +5,8 @@ import (
 	"net/http"
 )
 
+// EmailVerification was supposed to send a mail with a verification token to the user
+// by using a SMTP server.
 func EmailVerification(w http.ResponseWriter, r *http.Request, user database.SignUpUser) {
 	/*emailToken := app.CreateHash(user.Email)
 	token := database.EmailToken{

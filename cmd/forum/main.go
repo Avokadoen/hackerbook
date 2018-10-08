@@ -3,13 +3,10 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/globalsign/mgo/bson"
 	"io/ioutil"
 	"net/http"
 	"os"
-
-	"github.com/globalsign/mgo/bson"
-
-	"log"
 	"strings"
 
 	validator "github.com/asaskevich/govalidator"
@@ -17,6 +14,7 @@ import (
 	"github.com/subosito/gotenv"
 	"gitlab.com/avokadoen/softsecoblig2/cmd/forum/app"
 	"gitlab.com/avokadoen/softsecoblig2/lib/database"
+	"log"
 )
 
 //var (
@@ -27,6 +25,8 @@ import (
 https://www.thepolyglotdeveloper.com/2018/02/encrypt-decrypt-data-golang-application-crypto-packages/
 https://www.kaihag.com/https-and-go/
 */
+
+// init loads .env files
 func init() {
 	gotenv.Load("./cmd/forum/.env") //this path is relative to working dir upon go install
 }
@@ -41,17 +41,17 @@ func main() {
 		Port:     os.Getenv("PORT"),
 		Database: &database.DbState{},
 	}
-	
+
 	Server.Database.InitState() // TODO: use session copies instead of main pointer
 	err := Server.Database.CreateMainSession()
 	if err != nil {
 		log.Fatal("failed to create db session\n" + err.Error())
 	}
 
-	LogT := SetLogger()	//TODO fix it, does not work outside SetLogger function?!
+	/*LogT := SetLogger() //TODO fix it, does not work outside SetLogger function?!
 	LogT.Println("MainTest Println")
 	LogT.Print("MainTest Print\r\n")
-	LogT.Printf("MainTest printf %v","please")
+	LogT.Printf("MainTest printf %v", "please")*/
 
 	SecureCookie.Init()
 
@@ -106,22 +106,25 @@ func main() {
 		}
 		log.Fatal(srv.ListenAndServeTLS("server.crt", "server.key"))*/
 }
-
-func SetLogger()(*log.Logger){ // Testing setting new loggers.
-	errorLog, err := os.OpenFile("info.log", os.O_WRONLY|os.O_CREATE|os.O_APPEND,0644)
-	if err!= nil{
+/*
+func SetLogger() *log.Logger { // Testing setting new loggers.
+	errorLog, err := os.OpenFile("info.log", os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0644)
+	if err != nil {
 		fmt.Printf("error opening file: %v", err)
 	}
 	defer errorLog.Close()
 	//logger.SetOutput(errorLog)
 	//logger.Print("Loggertest\r\n")
-	logger := log.New(errorLog,"logtest: ", 1)
-	logger.Println("Setlogger\r\n")
+	logger := log.New(errorLog, "logtest: ", 1)
+	logger.Println("Setlogger")
 	//mgo.SetLogger(logger) // Gjør mgo nå me dt?!?
 	//mgo.SetDebug(true)
 	return logger
-}
+}*/
 
+// SignUpHandler deals with processing sign-up forms created with html that
+// becomes posted to the sign-up sub domain. After validation it saves the new user
+// to the db
 func SignUpHandler(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 	if r.Header.Get("Content-Type") != "application/json" {
@@ -129,7 +132,6 @@ func SignUpHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	fmt.Println("Start signup!")
 	var rawUserData database.SignUpUser
 	rBody, err := ioutil.ReadAll(r.Body)
 	if err != nil {
@@ -139,7 +141,6 @@ func SignUpHandler(w http.ResponseWriter, r *http.Request) {
 	err = json.Unmarshal(rBody, &rawUserData)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
-		fmt.Fprintln(w, "unable to sign up")
 		fmt.Println(string(rBody))
 		return
 	}
@@ -147,32 +148,25 @@ func SignUpHandler(w http.ResponseWriter, r *http.Request) {
 	if valid, err := validator.ValidateStruct(rawUserData); !valid {
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
-			fmt.Fprintln(w, "unable to validate user")
-			fmt.Printf("unable to validate user: %v", err)
 		}
-		fmt.Fprint(w, "invalid user")
 		return
 	}
-	fmt.Println("user signup validated!")
 
 	validateRecaptcha := ValidateReCaptcha(rawUserData.Response)
 
 	if validateRecaptcha == false {
-		fmt.Println("Captcha not validated successfully!")
 		w.Write([]byte("Captcha not validated successfully!"))
 		return
 	} else {
-	fmt.Println("Got through captcha validation!")
+		// captcha ok
 	}
 
 	hashedPass := app.ConvertPlainPassword(rawUserData.Username, rawUserData.Password)
 
-	fmt.Println("hashed password!")
-
 	sessPtr, err := Server.Database.CreateSessionPtr()
 	defer sessPtr.Close()
 	if err != nil {
-		fmt.Println(err)
+		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
@@ -183,7 +177,7 @@ func SignUpHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	userStatus, err := Server.Database.IsExistingUser(user, sessPtr)
 	if err != nil {
-		log.Printf("failed to check user in sign up. error: %+v", err)
+		w.WriteHeader(http.StatusInternalServerError)
 		return
 	} else if userStatus != nil {
 		if strings.Contains(*userStatus, "username") {
@@ -196,10 +190,11 @@ func SignUpHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	Server.Database.InsertToCollection(database.TableUser, user, sessPtr)
-	fmt.Println("user inserted in database!")
-	EmailVerification(w, r, user)
+	//EmailVerification(w, r, user)
 }
 
+// SignOutHandler tries to delete user cookie. When cookie becomes
+// validated it delete cookie from db and client browser
 func SignOutHandler(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 	if r.Header.Get("Content-Type") != "application/json" {
@@ -208,25 +203,22 @@ func SignOutHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	cookie, err := SecureCookie.FetchCookie(r)
 	if err != nil {
-		fmt.Printf("main fetch cookie, err: %v", err)
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 	err = SecureCookie.DeleteClientCookie(w, r.URL.Path)
 	if err != nil {
-		fmt.Printf("main failed to delete client cookie, err: %v", err)
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 	sessPtr, err := Server.Database.CreateSessionPtr()
 	defer sessPtr.Close()
 	if err != nil {
-		fmt.Println(err)
+		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 	err = SecureCookie.AuthenticateCookie(w, Server, cookie, sessPtr)
 	if err != nil {
-		fmt.Printf("main failed to delete cookie, err: %v", err)
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
@@ -235,37 +227,39 @@ func SignOutHandler(w http.ResponseWriter, r *http.Request) {
 
 }
 
+// CookieLoginHandler tries to authenticate user based on its local
+// cookie. Returns username of authenticated user if there was no error
 func CookieLoginHandler(w http.ResponseWriter, r *http.Request) {
 
 	defer r.Body.Close()
 	cookie, err := SecureCookie.FetchCookie(r)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		fmt.Printf("unable to fetch cookie, err: %v\n", err)
 		return
 	}
 	sessPtr, err := Server.Database.CreateSessionPtr()
 	defer sessPtr.Close()
 	if err != nil {
-		fmt.Println(err)
+		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 	err = SecureCookie.AuthenticateCookie(w, Server, cookie, sessPtr)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
-		fmt.Printf("\nunable to validate cookie, err: %v\n", err)
 		return
 	}
 	sessPtr, err = Server.Database.CreateSessionPtr()
 	defer sessPtr.Close()
 	if err != nil {
-		fmt.Println(err)
+		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 	username := Server.Database.GetUsername(cookie.ID, sessPtr)
 	w.Write([]byte(username))
 }
 
+// ManualLoginHandler process forms that the user has written them
+// self. Will create an authentication cookie if successful
 func ManualLoginHandler(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 	if r.Header.Get("Content-Type") != "application/json" {
@@ -282,16 +276,14 @@ func ManualLoginHandler(w http.ResponseWriter, r *http.Request) {
 	err = json.Unmarshal(rBody, &rawUserData)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		fmt.Printf("failed to unmarshal: %v", err)
 		return
 	}
 
 	if valid, err := validator.ValidateStruct(rawUserData); !valid {
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
-			fmt.Printf("unable to validate user: %v", err)
 		}
-		fmt.Fprint(w, "invalid user")
+		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
@@ -300,82 +292,76 @@ func ManualLoginHandler(w http.ResponseWriter, r *http.Request) {
 	sessPtr, err := Server.Database.CreateSessionPtr()
 	defer sessPtr.Close()
 	if err != nil {
-		fmt.Println(err)
+		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 	user := database.LoginUser{
 		Username: rawUserData.Username,
 		Password: hashedPass,
 	}
-	var body []byte
-	body = []byte("login failed")
+	body := []byte("login failed")
 	userDBId := Server.Database.AuthenticateUser(user, sessPtr)
 	if userDBId != bson.ObjectId(0) {
 		body = []byte("login successful")
 		encoded := SecureCookie.CreateCookie(w, userDBId, r.URL.Path)
 		//w.Header().Set("X-CSRF-Token", csrf.Token(r))
 		if encoded == "" {
-			fmt.Println("failed to create cookie from main")
+			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
 		dbCookie := database.CookieData{
 			ID:    userDBId,
 			Token: encoded,
 		}
-		Server.Database.DeleteCookie(dbCookie.ID, sessPtr)
+
+		// TODO: only delete cookie that is related to this specific hardware with this user
+		Server.Database.DeleteCookie(dbCookie.ID, sessPtr) // delete old invalid cookies
 		Server.Database.InsertToCollection(database.TableCookie, dbCookie, sessPtr)
 	}
 	w.Write(body)
 
 }
 
+// PostCommentHandler process form created by user to be saved as comment.
+// If comment gets processed without issue, then it is stored in db and
+// will be displayed to anyone retrieving relevant page
 func PostCommentHandler(w http.ResponseWriter, r *http.Request) {
-	// TODO Get topic id
 	sessPtr, err := Server.Database.CreateSessionPtr()
 	defer sessPtr.Close()
 	if err != nil {
-		fmt.Println(err)
+		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
-	// TODO: should use unique postComment struct
 	var commentRaw database.Comment
 	rBody, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		w.WriteHeader(http.StatusForbidden)
-		fmt.Printf("unable to read, err: %v", err)
+		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 	err = json.Unmarshal(rBody, &commentRaw)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		fmt.Printf("unable to unmarshal, err: %v", err)
 		return
 	}
 	cookie, err := SecureCookie.FetchCookie(r)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		fmt.Printf("unable to fetch cookie: %v", err)
 		return
 	}
 	username := Server.Database.GetUsername(cookie.ID, sessPtr)
 
 	comment := database.Comment{
 		Username: username,
-		Text:     commentRaw.Text, // TODO hent den her fra r på en måte
+		Text:     commentRaw.Text,
 	}
 
 	if valid, err := validator.ValidateStruct(comment); !valid {
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
-			fmt.Printf("unable to validate comment: %v", err)
 		}
-		fmt.Fprint(w, "invalid comment")
+		w.WriteHeader(http.StatusBadRequest)
 		return
-
 	}
 
 	Server.Database.InsertToCollection(database.TableComment, comment, sessPtr)
-	// TODO få lagt den inn i topic?
 }
-
-

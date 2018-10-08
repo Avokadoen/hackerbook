@@ -9,7 +9,7 @@ import (
 	"github.com/globalsign/mgo/bson"
 	"github.com/gorilla/mux"
 	"github.com/microcosm-cc/bluemonday"
-	blackfriday "gopkg.in/russross/blackfriday.v2"
+	"gopkg.in/russross/blackfriday.v2"
 )
 
 type HomePage struct {
@@ -17,7 +17,7 @@ type HomePage struct {
 }
 
 func GenerateHomePage(w http.ResponseWriter, r *http.Request) {
-
+	defer r.Body.Close()
 	sessPtr, err := Server.Database.CreateSessionPtr()
 	if err != nil {
 		fmt.Println(err)
@@ -40,7 +40,7 @@ func GenerateHomePage(w http.ResponseWriter, r *http.Request) {
 }
 
 func GenerateCategoryPage(w http.ResponseWriter, r *http.Request) {
-
+	defer r.Body.Close()
 	sessPtr, err := Server.Database.CreateSessionPtr()
 	defer sessPtr.Close()
 	if err != nil {
@@ -68,6 +68,7 @@ func GenerateCategoryPage(w http.ResponseWriter, r *http.Request) {
 }
 
 func GenerateTopicPage(w http.ResponseWriter, r *http.Request) {
+	defer r.Body.Close()
 	fmt.Println("Generating Topic Page")
 	vars := mux.Vars(r) //use vars to obtain data from db
 
@@ -110,6 +111,7 @@ func GenerateTopicPage(w http.ResponseWriter, r *http.Request) {
 
 //MISC handlers
 func NotFoundHandler(w http.ResponseWriter, r *http.Request) {
+	defer r.Body.Close()
 	w.WriteHeader(http.StatusNotFound)
 	tmpl := template.Must(template.ParseFiles("./web/no_content.html"))
 	tmpl.Execute(w, nil) //TODO: generating actual static pages is kinda bad...
