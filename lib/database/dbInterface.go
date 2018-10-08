@@ -9,24 +9,23 @@ import (
 
 	"github.com/globalsign/mgo"
 	"github.com/globalsign/mgo/bson"
-	// mgo "gopkg.in/mgo.v2"
 )
 
 const (
 	//DATABASE TABLES
-	TableCategory   = "category"
-	TableUser       = "user"
-	TableTopic      = "topic"
-	TableCookie     = "cookie"
-	TableComment    = "comment"
-	TableEmailToken = "eToken"
-	TableAdmin      = "admin"
+	TableCategory = "category"
+	TableUser     = "user"
+	TableTopic    = "topic"
+	TableCookie   = "cookie"
+	TableComment  = "comment"
+	//TableEmailToken = "eToken"
+	TableAdmin = "admin"
 )
 
 const (
 	// COOKIE CONST
 	CookieName       = "HackerBook"
-	CookieExpiration = time.Hour
+	CookieExpiration = time.Hour * 24
 )
 
 type Db interface { //TODO: split interface on type of access
@@ -58,7 +57,7 @@ type DbState struct {
 }
 
 type SignUpUser struct {
-	Id       bson.ObjectId `bson:"_id,omitempty" valid:"-, optional"`
+	ID       bson.ObjectId `bson:"_id,omitempty" valid:"-"`
 	Email    string        `json:"email" valid:"email, required"`
 	Username string        `json:"username" valid:"alphanum, required"`
 	Password string        `json:"password" valid:"alphanum, required"`
@@ -66,7 +65,7 @@ type SignUpUser struct {
 }
 
 type AdminUser struct {
-	Id     bson.ObjectId `bson:"_id,omitempty" valid:"-, optional"`
+	ID     bson.ObjectId `bson:"_id,omitempty" valid:"-"`
 	UserID bson.ObjectId `json:"userID" valid:"-, required"`
 }
 
@@ -81,24 +80,24 @@ type LoginUser struct {
 }
 
 type CookieData struct {
-	Id    bson.ObjectId `json:"userid" valid:"-, required"`
+	ID    bson.ObjectId `json:"userid" valid:"-, required"`
 	Token string        `json:"token" valid:"alphanum, required"`
 }
 
 type Category struct {
 	Id     bson.ObjectId   `bson:"_id,omitempty" valid:"-"`
-	Name   string          `json:"name" valid:"alphanum, required"`
+	Name   string          `json:"name" valid:"printableascii, required"`
 	Topics []bson.ObjectId `json:"topics" valid:"-"`
 	//MORE?
 }
 
 /*type Category struct {
-	Id       bson.ObjectId `bson:"_id,omitempty" valid:"-, optional"`
+	ID       bson.ObjectId `bson:"_id,omitempty" valid:"-, optional"`
 	Name	 string		   `json:"name" valid:"alphanum, required"`
 }*/
 
 type Topic struct {
-	Id       bson.ObjectId `bson:"_id" valid:"-, optional"`
+	ID       bson.ObjectId `bson:"_id" valid:"-"`
 	Category string        `json:"name" valid:"alphanum, required"`
 	Username string        `json:"username" valid:"alphanum, required"`
 	Title    string        `json:"title" valid:"printableascii, required"`
@@ -106,10 +105,10 @@ type Topic struct {
 }
 
 type Comment struct {
-	CommentID bson.ObjectId `bson:"_id,omitempty" valid:"-, optional"`
+	CommentID bson.ObjectId `bson:"_id,omitempty" valid:"-"`
 	Username  string        `json:"username" valid:"alphanum, required"`
 	Text      string        `json:"text" valid:"halfwidth"`
-	ReplyTo   int           `json:"replyto" valid:"int, optional"`
+	ReplyTo   int           `json:"replyto" valid:"-"`
 }
 
 func (db *DbState) InitState() {
@@ -118,10 +117,11 @@ func (db *DbState) InitState() {
 	db.Username = os.Getenv("DBUSERNAME")
 	db.Password = os.Getenv("DBPASSWORD")
 
-	fmt.Printf("%+v\n", db.Hosts)
-	fmt.Printf("%+v\n", db.DbName)
-	fmt.Printf("%+v\n", db.Username)
-	fmt.Printf("%+v\n", db.Password)
+	//
+	/*log.Printf("%+v\n", db.Hosts)
+	log.Printf("%+v\n", db.DbName)
+	log.Printf("%+v\n", db.Username)
+	log.Printf("%+v\n", db.Password)*/
 }
 
 func (db *DbState) CreateMainSession() (err error) {
@@ -266,7 +266,7 @@ func (db *DbState) AuthenticateUser(user LoginUser, session *mgo.Session) bson.O
 		log.Printf("%+v", err)
 		return bson.ObjectId(0)
 	}
-	return storedUser.Id
+	return storedUser.ID
 }
 
 func (db *DbState) AuthenticateAdmin(userID bson.ObjectId, session *mgo.Session) bson.ObjectId {
@@ -277,7 +277,7 @@ func (db *DbState) AuthenticateAdmin(userID bson.ObjectId, session *mgo.Session)
 		log.Printf("%+v", err)
 		return bson.ObjectId(0)
 	}
-	return adminUser.Id
+	return adminUser.ID
 }
 
 func (db *DbState) IsExistingUser(user SignUpUser, session *mgo.Session) (*string, error) {
@@ -307,7 +307,7 @@ func (db *DbState) IsExistingUser(user SignUpUser, session *mgo.Session) (*strin
 func (db *DbState) GetCookie(cookie CookieData, entry *CookieData, session *mgo.Session) {
 
 	collection := db.getCollection(TableCookie, session)
-	err := collection.Find(bson.M{"id": bson.ObjectIdHex(cookie.Id.Hex())}).One(&entry)
+	err := collection.Find(bson.M{"id": bson.ObjectIdHex(cookie.ID.Hex())}).One(&entry)
 	if err != nil {
 		fmt.Printf("when retrieving cookie error: %+v", err)
 	}
@@ -424,11 +424,11 @@ func (db *DbState) CreateTopic(categoryName string, topic Topic, session *mgo.Se
 	if session == nil {
 		return fmt.Errorf("nil session in get CreateTopic")
 	}
-	topic.Id = bson.NewObjectId()
+	topic.ID = bson.NewObjectId()
 	db.InsertToCollection(TableTopic, topic, session)
 
 	selector := bson.M{"name": categoryName}
-	update := bson.M{"$push": bson.M{"topics": bson.M{"$each": []bson.ObjectId{topic.Id}}}}
+	update := bson.M{"$push": bson.M{"topics": bson.M{"$each": []bson.ObjectId{topic.ID}}}}
 
 	return db.getCollection(TableCategory, session).Update(selector, update)
 }

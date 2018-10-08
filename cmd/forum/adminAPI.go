@@ -11,6 +11,7 @@ import (
 	"gitlab.com/avokadoen/softsecoblig2/lib/database"
 )
 
+// AuthenticateAdmin returns the objectID of the admin account if it exists
 func AuthenticateAdmin(w http.ResponseWriter, r *http.Request) bson.ObjectId {
 	//Get user posting
 	cookie, err := SecureCookie.FetchCookie(r)
@@ -32,7 +33,7 @@ func AuthenticateAdmin(w http.ResponseWriter, r *http.Request) bson.ObjectId {
 		return bson.ObjectId(0)
 	}
 
-	adminID := Server.Database.AuthenticateAdmin(cookie.Id, sessPtr)
+	adminID := Server.Database.AuthenticateAdmin(cookie.ID, sessPtr)
 
 	if adminID != bson.ObjectId(0) {
 		return adminID
@@ -42,6 +43,7 @@ func AuthenticateAdmin(w http.ResponseWriter, r *http.Request) bson.ObjectId {
 	}
 }
 
+// AuthenticateAdminHandler is the handler called to verify if the user is logged in as an admin
 func AuthenticateAdminHandler(w http.ResponseWriter, r *http.Request) {
 
 	adminID := AuthenticateAdmin(w, r)
@@ -56,6 +58,7 @@ func AuthenticateAdminHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// CreateNewCategoryHandler is the handler called for an admin to create new categories
 func CreateNewCategoryHandler(w http.ResponseWriter, r *http.Request) {
 
 	adminID := AuthenticateAdmin(w, r)
@@ -101,7 +104,7 @@ func CreateNewCategoryHandler(w http.ResponseWriter, r *http.Request) {
 				fmt.Printf("request body: %+v", string(rBody))
 			}
 			w.WriteHeader(http.StatusBadRequest)
-			fmt.Fprint(w, "Category name contains non-alphanumeric characters!\n")
+			fmt.Fprint(w, "Category name contains non-printable unicode characters!\n")
 			return
 		}
 

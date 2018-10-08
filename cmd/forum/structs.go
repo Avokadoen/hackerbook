@@ -4,14 +4,14 @@ import "gopkg.in/mgo.v2/bson"
 
 //Category - Shallow category, not containing other than id to reference topics
 type Category struct {
-	Id     bson.ObjectId   `bson:"_id,omitempty"`
+	ID     bson.ObjectId   `bson:"_id,omitempty"`
 	Name   string          `json:"name"`
 	Topics []bson.ObjectId `json:"topics"`
 	//MORE?
 }
 
 type CategoryWithTopics struct {
-	Id     bson.ObjectId `bson:"_id,omitempty"`
+	ID     bson.ObjectId `bson:"_id,omitempty"`
 	Name   string        `json:"name"`
 	Topics []Topic       `json:"topics"`
 	//MORE?
@@ -31,14 +31,14 @@ type CategoryWithTopics struct {
 
 */
 type TopicAndCategory struct {
-	Id   bson.ObjectId `bson:"_id,omitempty"`
+	ID   bson.ObjectId `bson:"_id,omitempty"`
 	Name string        `json:"name"`
 	Topic
 }
 
 //Topic within a category
 type Topic struct { //TODO unify with database structs
-	Id       bson.ObjectId `bson:"_id,omitempty"`
+	ID       bson.ObjectId `bson:"_id,omitempty"`
 	Title    string        `json:"title"`
 	Content  string        `json:"content"`
 	Comments []Comment     `json:"comments"`
