@@ -154,6 +154,11 @@ func SignUpHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if len(rawUserData.Password) < 8 || len(rawUserData.Username) < 6 {
+		w.Write([]byte("password (8) or username (6) too short"))
+		return
+	}
+
 	if valid, err := validator.ValidateStruct(rawUserData); !valid {
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
