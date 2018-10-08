@@ -1,1 +1,1 @@
-web: go run ./cmd/forum/
+web: run ./cmd/forum/
