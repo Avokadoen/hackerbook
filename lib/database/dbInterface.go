@@ -117,7 +117,7 @@ func (db *DbState) InitState() {
 	db.Username = os.Getenv("DBUSERNAME")
 	db.Password = os.Getenv("DBPASSWORD")
 
-	// 
+	//
 	/*log.Printf("%+v\n", db.Hosts)
 	log.Printf("%+v\n", db.DbName)
 	log.Printf("%+v\n", db.Username)
