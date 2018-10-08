@@ -1,1 +1,1 @@
-web: softsecoblig2/cmd/forum
+web: go run ./cmd/forum/
