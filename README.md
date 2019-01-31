@@ -5,7 +5,7 @@
 - Make sure you have a working go environment of version 1.11 or higher:
   - To do this you can follow this [guide](https://golang.org/doc/install)
 - [Download go dep](https://github.com/golang/dep)
-- Do "go get -u gitlab.com/avokadoen/softsecoblig2/..."
+- Do "go get -u gitlab.com/avokadoen/hackerbook/..."
 - Run dep ensure in root of repo directory
 - Fill the values of the .envtmpl to your db information. we used mlab, but you could host a local mongodb for local hosting
 - For Captcha to work on registration page, you have to register on [Google's reCaptcha admin page](https://www.google.com/recaptcha/admin), and update to your public data-sitekey in the signup.html (as this is not done through environment for now)
